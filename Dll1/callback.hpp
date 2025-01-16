@@ -24,8 +24,10 @@ extern "C" {
 	}
 
 	// get string from extern process
-	__declspec(dllexport) void ForwardAnswer(LPWSTR answer) {
-		// GPT답변창의 텍스트 변경
-		SetWindowText(hAnswer, answer);
+	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
+		if (context != L"") {
+			// GPT답변창의 텍스트 변경
+			SetWindowText(hAnswer, result);
+		}			
 	}
 }
