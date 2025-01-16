@@ -143,7 +143,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="callback.hpp" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="handles.hpp" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
