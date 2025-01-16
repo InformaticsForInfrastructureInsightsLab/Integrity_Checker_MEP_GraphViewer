@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 #include "handles.hpp"
+#include "utils.hpp"
 
 #include <string>
 
@@ -28,6 +29,8 @@ extern "C" {
 		if (context != L"") {
 			// GPT답변창의 텍스트 변경
 			SetWindowText(hAnswer, result);
+
+			std::string graph = LpwstrToString(context);
 		}			
 	}
 }

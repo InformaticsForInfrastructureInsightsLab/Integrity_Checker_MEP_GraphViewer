@@ -3,8 +3,6 @@
 #include "callback.hpp"
 #include "handles.hpp"
 
-#include <string>
-
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // program entry point
