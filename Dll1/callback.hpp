@@ -32,14 +32,14 @@ extern "C" {
 
 		try {
 			std::string json = LpwstrToString(context);
-			BuildGraph(std::move(json));
+			BuildGraph(json);
 		}
 		catch (const std::exception& e){
-			LPWSTR err_msg = nullptr;
+			wchar_t wcStr[256];
 			size_t conv_chars;
 			int len = (int)strlen(e.what()) + 1;
-			errno_t err = mbstowcs_s(&conv_chars, err_msg, len, e.what(), _TRUNCATE);
-			SetWindowText(hAnswer, err_msg);
+			errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
+			SetWindowText(hAnswer, wcStr);
 
 			if (err != 0)
 				return;
