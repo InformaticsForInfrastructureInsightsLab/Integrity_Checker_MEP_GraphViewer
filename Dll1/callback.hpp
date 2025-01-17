@@ -14,6 +14,7 @@ CallbackFunc g_callback = nullptr;
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {
+		SetWindowText(hAnswer, L" ");
 		g_callback = callback;
 	}
 
@@ -26,11 +27,22 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-		if (context != L"") {
-			// GPT답변창의 텍스트 변경
-			SetWindowText(hAnswer, result);
+		// GPT답변창의 텍스트 변경
+		SetWindowText(hAnswer, result);
 
-			std::string graph = LpwstrToString(context);
-		}			
+		try {
+			std::string json = LpwstrToString(context);
+			BuildGraph(std::move(json));
+		}
+		catch (const std::exception& e){
+			LPWSTR err_msg = nullptr;
+			size_t conv_chars;
+			int len = (int)strlen(e.what()) + 1;
+			errno_t err = mbstowcs_s(&conv_chars, err_msg, len, e.what(), _TRUNCATE);
+			SetWindowText(hAnswer, err_msg);
+
+			if (err != 0)
+				return;
+		}
 	}
 }
