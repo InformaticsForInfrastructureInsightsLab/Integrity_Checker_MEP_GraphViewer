@@ -21,4 +21,8 @@ BuildGraph(T&& json_string) {
     nlohmann::json json = nlohmann::json::parse(json_string);
     Graph graph(json);
     graph.visualize();
+
+    image = new Image(L"C:/objectinfo/gpt_visualize.png");
+    RECT client_rect = { 0,0,500,900 };
+    InvalidateRect(hWnd, &client_rect, TRUE);
 }

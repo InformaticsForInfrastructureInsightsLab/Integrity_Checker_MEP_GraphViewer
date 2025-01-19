@@ -5,3 +5,8 @@
 #include <windows.h>
 #include <string>
 #include "json.hpp"
+
+#include <ole2.h>
+
+#pragma comment (lib, "gdiplus.lib")
+#include <gdiplus.h>

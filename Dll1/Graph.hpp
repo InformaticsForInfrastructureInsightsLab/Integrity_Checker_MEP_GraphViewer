@@ -109,7 +109,7 @@ public:
 
 		// 그래프 레이아웃 및 렌더링
 		gvLayout(gvc, g, "neato");
-		gvRenderFilename(gvc, g, "png", "C:/vscode/gpt_visualize.png");
+		gvRenderFilename(gvc, g, "png", "C:/objectinfo/gpt_visualize.png");
 
 		// 리소스 해제
 		gvFreeLayout(gvc, g);

@@ -3,10 +3,17 @@
 #include "callback.hpp"
 #include "handles.hpp"
 
+using namespace Gdiplus;
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // program entry point
 extern "C" __declspec(dllexport) void __stdcall ShowMyWindow() {
+	// GDI+ 초기화
+	GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR gdiplusToken;
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
 	const wchar_t CLASS_NAME[] = L"MyWindowClass";
 
 	WNDCLASS wc = { 0 };
@@ -39,6 +46,9 @@ extern "C" __declspec(dllexport) void __stdcall ShowMyWindow() {
 			DispatchMessage(&msg);
 		}
 	}
+
+	// GDI+ 종료
+	GdiplusShutdown(gdiplusToken);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
@@ -49,6 +59,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+
 	switch (msg) {
 	case WM_CREATE:
 		// 입력 칸 (Edit Control) 생성
@@ -84,6 +95,22 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 			g_callback();
 		}
 		break;
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hwnd, &ps);
+
+		// GDI+ Graphics 객체 생성
+		Graphics graphics(hdc);
+
+		// 이미지 그리기
+		if (image)
+		{
+			graphics.DrawImage(image, 0, 0);
+		}
+
+		EndPaint(hwnd, &ps);
+		break;
+	}
 	case WM_CLOSE:
 		DestroyWindow(hwnd);
 		break;
