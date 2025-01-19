@@ -3,15 +3,19 @@
 #include "callback.hpp"
 #include "handles.hpp"
 
+constexpr int clientWidth = 950;
+constexpr int clientHeight = 600;
+
 using namespace Gdiplus;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // program entry point
-extern "C" __declspec(dllexport) void __stdcall ShowMyWindow() {
+extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 	// GDI+ 초기화
 	GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
+
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 	const wchar_t CLASS_NAME[] = L"MyWindowClass";
@@ -23,7 +27,7 @@ extern "C" __declspec(dllexport) void __stdcall ShowMyWindow() {
 
 	RegisterClass(&wc);
 
-	RECT size = { 0, 0, 950, 600 };
+	RECT size = { 0, 0, clientWidth, clientHeight };
 	DWORD dwStyle = WS_OVERLAPPEDWINDOW;
 	AdjustWindowRect(&size, dwStyle, FALSE);
 	hWnd = CreateWindow(
@@ -35,20 +39,23 @@ extern "C" __declspec(dllexport) void __stdcall ShowMyWindow() {
 		size.bottom - size.top,   // 전체 창 높이
 		NULL, NULL, hInstance, NULL
 	);
-
+	
+	MSG msg = {};
 	if (hWnd) {
 		ShowWindow(hWnd, SW_SHOW);
 		UpdateWindow(hWnd);
 
-		MSG msg = {};
+		
 		while (GetMessage(&msg, nullptr, 0, 0)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
 	}
 
-	// GDI+ 종료
+	delete image;
 	GdiplusShutdown(gdiplusToken);
+
+	return static_cast<int>(msg.wParam);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
@@ -99,13 +106,32 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hwnd, &ps);
 
+		// 배경을 흰색으로 채우기
+		HBRUSH whiteBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
+		FillRect(hdc, &ps.rcPaint, whiteBrush);
+
 		// GDI+ Graphics 객체 생성
 		Graphics graphics(hdc);
 
 		// 이미지 그리기
 		if (image)
 		{
-			graphics.DrawImage(image, 0, 0);
+			RECT clientRect;
+			GetClientRect(hwnd, &clientRect);
+
+			int img_region_width = 950;
+			int img_region_height = 350;
+
+			// 이미지 크기 가져오기
+			int imageWidth = image->GetWidth();
+			int imageHeight = image->GetHeight();
+
+			// 중앙 좌표 계산
+			int x = (img_region_width - imageWidth) / 2;
+			int y = (img_region_height - imageHeight) / 2;
+
+			// 이미지 그리기
+			graphics.DrawImage(image, x, y, imageWidth, imageHeight);
 		}
 
 		EndPaint(hwnd, &ps);
@@ -115,6 +141,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		DestroyWindow(hwnd);
 		break;
 	case WM_DESTROY:
+		UnregisterClass(L"MyWindowClass", hInstance);
 		PostQuitMessage(0);
 		break;
 	default:
