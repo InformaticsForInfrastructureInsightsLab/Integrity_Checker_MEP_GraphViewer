@@ -10,6 +10,9 @@
 #include <vector>
 #include "json.hpp"
 
+#define GVDLL
+#include <graphviz/gvc.h>
+
 struct node {
 	std::string ElementType;
 	std::string Category;
@@ -84,6 +87,34 @@ public:
 			rel.end_node = clash["n"]["properties"]["GUID"];
 			edge_vec.push_back(rel);
 		}
+	}
+
+	void visualize() {
+		GVC_t* gvc = gvContext();  // Graphviz context 생성
+		char graph_name[] = "Neo4j Graph";
+		Agraph_t* g = agopen(static_cast<char *>(graph_name), Agundirected, NULL);  // 무향 그래프 생성
+
+		//set size
+		agsafeset(g, const_cast<char*>("size"), const_cast<char*>("5,5"), const_cast<char*>(""));
+
+		for (auto& clash : edge_vec) {
+			node* start_node = node_map[clash.start_node];
+			node* end_node = node_map[clash.end_node];
+
+			Agnode_t* n1 = agnode(g, static_cast<char*>(start_node->GUID.data()), TRUE);
+			Agnode_t* n2 = agnode(g, static_cast<char*>(end_node->GUID.data()), TRUE);
+
+			agedge(g, n1, n2, NULL, TRUE);
+		}
+
+		// 그래프 레이아웃 및 렌더링
+		gvLayout(gvc, g, "neato");
+		gvRenderFilename(gvc, g, "png", "C:/vscode/gpt_visualize.png");
+
+		// 리소스 해제
+		gvFreeLayout(gvc, g);
+		agclose(g);
+		gvFreeContext(gvc);
 	}
 };
 

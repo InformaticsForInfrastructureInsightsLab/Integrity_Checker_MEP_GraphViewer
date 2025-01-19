@@ -20,4 +20,5 @@ typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>,void>
 BuildGraph(T&& json_string) {
     nlohmann::json json = nlohmann::json::parse(json_string);
     Graph graph(json);
+    graph.visualize();
 }
