@@ -101,8 +101,17 @@ public:
 			node* start_node = node_map[clash.start_node];
 			node* end_node = node_map[clash.end_node];
 
-			Agnode_t* n1 = agnode(g, static_cast<char*>(start_node->GUID.data()), TRUE);
-			Agnode_t* n2 = agnode(g, static_cast<char*>(end_node->GUID.data()), TRUE);
+			Agnode_t* n1 = agnode(g, static_cast<char*>(start_node->ElementType.data()), TRUE);
+			Agnode_t* n2 = agnode(g, static_cast<char*>(end_node->ElementType.data()), TRUE);
+
+			agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
+			agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용
+			agsafeset(n1, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // 내부 색상
+
+			agsafeset(n2, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
+			agsafeset(n2, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용
+			agsafeset(n2, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // 내부 색상
+
 
 			agedge(g, n1, n2, NULL, TRUE);
 		}
