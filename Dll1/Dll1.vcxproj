@@ -177,7 +177,6 @@ xcopy /Y /Q "$(TargetDir)Dll1.dll" "%PLUGIN_DIR%"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="callback.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="globals.hpp" />
     <ClInclude Include="Graph.hpp" />
