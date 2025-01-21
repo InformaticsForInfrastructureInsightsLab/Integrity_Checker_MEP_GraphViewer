@@ -153,8 +153,8 @@ gvc.lib;%(AdditionalDependencies)</AdditionalDependencies>
   <ItemGroup>
     <ClInclude Include="callback.hpp" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="globals.hpp" />
     <ClInclude Include="Graph.hpp" />
-    <ClInclude Include="handles.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="utils.hpp" />

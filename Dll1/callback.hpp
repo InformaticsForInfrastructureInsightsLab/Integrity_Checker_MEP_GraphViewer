@@ -11,6 +11,8 @@ using CallbackFunc = void(__stdcall*)(void);
 // 콜백 함수 포인터 저장 변수
 CallbackFunc g_callback = nullptr;
 
+
+// 
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {

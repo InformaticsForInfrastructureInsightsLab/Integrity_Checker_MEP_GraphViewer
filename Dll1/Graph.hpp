@@ -5,10 +5,11 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include "pch.h"
+
 #include <string>
 #include <map>
 #include <vector>
-#include "json.hpp"
 
 #define GVDLL
 #include <graphviz/gvc.h>

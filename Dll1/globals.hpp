@@ -1,5 +1,5 @@
 #pragma once
-#include "framework.h"
+#include "pch.h"
 
 HINSTANCE hInstance;
 HWND hWnd, hEdit, hButton, hAnswer;
