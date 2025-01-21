@@ -1,7 +1,7 @@
 ﻿// MyWindowDLL.cpp
 #include "pch.h"
 #include "callback.hpp"
-#include "handles.hpp"
+#include "globals.hpp"
 
 constexpr int clientWidth = 950;
 constexpr int clientHeight = 600;

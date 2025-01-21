@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.h"
-#include "handles.hpp"
+#include "globals.hpp"
 #include "utils.hpp"
 
 #include <string>
