@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <string>
 
+#include "globals.hpp"
 #include "Graph.hpp"
 
 std::string LpwstrToString(LPWSTR str) {
