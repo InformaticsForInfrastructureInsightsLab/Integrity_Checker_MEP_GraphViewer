@@ -113,10 +113,14 @@
       <AdditionalDependencies>cgraph.lib;gvc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>@echo off
-set SOURCE_DIR=$(TargetDir)
-set DEST_DIR=C:\MyTargetDirectory
-xcopy /Y /Q "%SOURCE_DIR%*.dll" "%DEST_DIR%"</Command>
+      <Command>set "PLUGIN_DIR=C:\Program Files\Autodesk\Navisworks Manage 2023\Plugins\Integrity Checker-MEP"
+if not exist "%PLUGIN_DIR%" (
+       
+    exit /b 1
+
+)
+xcopy /Y /Q "$(TargetDir)Dll1.dll" "%PLUGIN_DIR%"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -162,10 +166,14 @@ gvc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalDependencies>cgraph.lib;gvc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>@echo off
-set SOURCE_DIR=$(TargetDir)
-set DEST_DIR=C:\MyTargetDirectory
-xcopy /Y /Q "%SOURCE_DIR%*.dll" "%DEST_DIR%"</Command>
+      <Command>set "PLUGIN_DIR=C:\Program Files\Autodesk\Navisworks Manage 2023\Plugins\Integrity Checker-MEP"
+if not exist "%PLUGIN_DIR%" (
+       
+    exit /b 1
+
+)
+xcopy /Y /Q "$(TargetDir)Dll1.dll" "%PLUGIN_DIR%"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

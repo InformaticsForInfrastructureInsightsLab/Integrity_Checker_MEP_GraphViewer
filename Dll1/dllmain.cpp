@@ -73,7 +73,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		// 입력 칸 (Edit Control) 생성
 		hEdit = CreateWindowEx(
 			0, L"EDIT", L"",
-			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL | ES_MULTILINE | ES_AUTOVSCROLL,
+			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
 			10, 500, 830, 90,
 			hwnd, (HMENU)1001,
 			hInstance, nullptr
