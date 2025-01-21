@@ -42,4 +42,8 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="cgraph.lib" />
+    <Library Include="gvc.lib" />
+  </ItemGroup>
 </Project>
