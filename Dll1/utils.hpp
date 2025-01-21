@@ -22,6 +22,10 @@ BuildGraph(T&& json_string) {
     Graph graph(json);
     graph.visualize();
 
+    if (image) {
+        delete image;
+    }
+
     image = new Image(L"C:/objectinfo/gpt_visualize.png");
     RECT client_rect = { 0,0,900,500 };
     InvalidateRect(hWnd, &client_rect, TRUE);
