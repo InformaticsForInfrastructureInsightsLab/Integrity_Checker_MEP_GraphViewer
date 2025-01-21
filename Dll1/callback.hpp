@@ -35,7 +35,7 @@ extern "C" {
 			BuildGraph(json);
 		}
 		catch (const std::exception& e){
-			wchar_t wcStr[256];
+			wchar_t wcStr[4096];
 			size_t conv_chars;
 			int len = (int)strlen(e.what()) + 1;
 			errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);

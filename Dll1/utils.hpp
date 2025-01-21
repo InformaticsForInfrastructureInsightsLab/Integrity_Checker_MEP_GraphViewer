@@ -18,13 +18,13 @@ std::string LpwstrToString(LPWSTR str) {
 template<typename T>
 typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>,void>
 BuildGraph(T&& json_string) {
-    nlohmann::json json = nlohmann::json::parse(json_string);
-    Graph graph(json);
-    graph.visualize();
-
     if (image) {
         delete image;
     }
+
+    nlohmann::json json = nlohmann::json::parse(json_string);
+    Graph graph(json);
+    graph.visualize();
 
     image = new Image(L"C:/objectinfo/gpt_visualize.png");
     RECT client_rect = { 0,0,900,500 };
