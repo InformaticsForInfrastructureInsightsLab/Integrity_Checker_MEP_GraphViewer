@@ -184,6 +184,7 @@ xcopy /Y /Q "$(TargetDir)*.lib" "%PLUGIN_DIR%"
     <ClInclude Include="globals.hpp" />
     <ClInclude Include="Graph.hpp" />
     <ClInclude Include="json.hpp" />
+    <ClInclude Include="panel.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="utils.hpp" />
   </ItemGroup>

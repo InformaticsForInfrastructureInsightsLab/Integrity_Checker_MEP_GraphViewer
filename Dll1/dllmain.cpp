@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "utils.hpp"
 #include "globals.hpp"
+#include "panel.hpp"
 
 constexpr int clientWidth = 950;
 constexpr int clientHeight = 600;
@@ -40,6 +41,8 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 		NULL, NULL, hInstance, NULL
 	);
 	
+	RegisterPanelClass(hInstance);
+
 	MSG msg = {};
 	if (hWnd) {
 		ShowWindow(hWnd, SW_SHOW);
@@ -73,7 +76,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		// 입력 칸 (Edit Control) 생성
 		hEdit = CreateWindowEx(
 			0, L"EDIT", L"",
-			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+			WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOHSCROLL,
 			10, 500, 830, 90,
 			hwnd, (HMENU)1001,
 			hInstance, nullptr
@@ -90,11 +93,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		//모델 답변
 		hAnswer = CreateWindowEx(
 			WS_EX_CLIENTEDGE,
-			L"EDIT",
-			L"LLM의 답변이 여기에 표시됩니다",
+			L"EDIT", L"LLM의 답변이 여기에 표시됩니다",
 			WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY,
 			10, 350, 930, 140,
 			hwnd, (HMENU)1002,
+			hInstance, nullptr);
+
+		hPanel = CreateWindowEx(
+			0, L"GraphViewer", nullptr, 
+			WS_CHILD | WS_VISIBLE,
+			0, 0, 950, 350,
+			hwnd, (HMENU)2001,
 			hInstance, nullptr);
 		break;
 
@@ -111,12 +120,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		HBRUSH whiteBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
 		FillRect(hdc, &ps.rcPaint, whiteBrush);
 
-		// GDI+ Graphics 객체 생성
-		Graphics graphics(hdc);
-
 		// 이미지 그리기
 		if (image)
 		{
+			// GDI+ Graphics 객체 생성
+			Graphics graphics(hdc);
+
 			RECT clientRect;
 			GetClientRect(hwnd, &clientRect);
 
@@ -142,7 +151,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		DestroyWindow(hwnd);
 		break;
 	case WM_DESTROY:
-		UnregisterClass(L"MyWindowClass", hInstance);
+		UnregisterClass(L"AI Chat", hInstance);
 		PostQuitMessage(0);
 		break;
 	default:
