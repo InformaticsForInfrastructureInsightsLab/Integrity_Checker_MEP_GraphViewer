@@ -1,20 +1,21 @@
 #pragma once
-#include "pch.h"
 #include <type_traits>
 #include <string>
 
-#include "globals.hpp"
-#include "Graph.hpp"
+#include "framework.h"
+#include "WindowClass.h"
+
+extern MainWindow win;
 
 std::string LpwstrToString(LPWSTR str) {
-    // 변환에 필요한 버퍼 크기 계산
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
-    // 버퍼 할당
-    std::string std_str(size_needed, 0);
-    // 실제 변환 수행
-    WideCharToMultiByte(CP_UTF8, 0, str, -1, &std_str[0], size_needed, NULL, NULL);
+	// 변환에 필요한 버퍼 크기 계산
+	int size_needed = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+	// 버퍼 할당
+	std::string std_str(size_needed, 0);
+	// 실제 변환 수행
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, &std_str[0], size_needed, NULL, NULL);
 
-    return std_str;
+	return std_str;
 }
 
 template<typename T>
@@ -41,21 +42,21 @@ CallbackFunc g_callback = nullptr;
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {
-		SetWindowText(hAnswer, L" ");
+		SetWindowText(win.hAnswer, L" ");
 		g_callback = callback;
 	}
 
 	// export user question to extern process
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
 		WCHAR text[256];
-		GetWindowText(hEdit, text, sizeof(text) / sizeof(WCHAR));
+		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
 		return text;
 	}
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
 		// GPT답변창의 텍스트 변경
-		SetWindowText(hAnswer, result);
+		SetWindowText(win.hAnswer, result);
 
 		try {
 			std::string json = LpwstrToString(context);
@@ -66,7 +67,7 @@ extern "C" {
 			size_t conv_chars;
 			int len = (int)strlen(e.what()) + 1;
 			errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
-			SetWindowText(hAnswer, wcStr);
+			SetWindowText(win.hAnswer, wcStr);
 
 			if (err != 0)
 				return;
