@@ -182,12 +182,13 @@ xcopy /Y /Q "$(TargetDir)*.lib" "%PLUGIN_DIR%"
   <ItemGroup>
     <ClInclude Include="Graph.hpp" />
     <ClInclude Include="utils.hpp" />
-    <ClInclude Include="WindowClass.h" />
+    <ClInclude Include="WindowClass.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="json.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graph.cpp" />
+    <ClCompile Include="utils.cpp" />
     <ClCompile Include="WindowClass.cpp" />
     <ClCompile Include="dllmain.cpp" />
   </ItemGroup>

@@ -34,7 +34,7 @@ public:
         }
     }
 
-    BaseWindow() : m_hwnd(NULL) { }
+    BaseWindow() : m_hwnd(NULL), class_name(nullptr) { }
 
     BOOL Create(
         PCWSTR lpWindowName,
@@ -52,42 +52,13 @@ public:
 
         wc.lpfnWndProc = DERIVED_TYPE::WindowProc;
         wc.hInstance = GetModuleHandle(NULL);
-        wc.lpszClassName = class_name;
+        wc.lpszClassName = ClassName();
 
         RegisterClass(&wc);
 
         m_hwnd = CreateWindowEx(
-            dwExStyle, class_name, lpWindowName, dwStyle, x, y,
+            dwExStyle, ClassName(), lpWindowName, dwStyle, x, y,
             nWidth, nHeight, hWndParent, hMenu, GetModuleHandle(NULL), this
-        );
-
-        return (m_hwnd ? TRUE : FALSE);
-    }
-
-    BOOL Create(
-        PCWSTR lpWindowName,
-        DWORD dwStyle,
-        HINSTANCE hInstance,
-        DWORD dwExStyle = 0,
-        int x = CW_USEDEFAULT,
-        int y = CW_USEDEFAULT,
-        int nWidth = CW_USEDEFAULT,
-        int nHeight = CW_USEDEFAULT,
-        HWND hWndParent = 0,
-        HMENU hMenu = 0
-    )
-    {
-        WNDCLASS wc = { 0 };
-
-        wc.lpfnWndProc = DERIVED_TYPE::WindowProc;
-        wc.hInstance = hInstance;
-        wc.lpszClassName = class_name;
-
-        RegisterClass(&wc);
-
-        m_hwnd = CreateWindowEx(
-            dwExStyle, class_name, lpWindowName, dwStyle, x, y,
-            nWidth, nHeight, hWndParent, hMenu, hInstance, this
         );
 
         return (m_hwnd ? TRUE : FALSE);
@@ -95,30 +66,29 @@ public:
 
 protected:
     virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
+    virtual PCWSTR  ClassName() const = 0;
 };
 
 class MainWindow : public BaseWindow<MainWindow> {
 public:
     HWND hEdit, hButton, hAnswer;
 public:
-    MainWindow(PCWSTR name) {
-        class_name = name;
+    MainWindow() {
+        hEdit = nullptr;
+        hButton = nullptr;
+        hAnswer = nullptr;
     }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    PCWSTR ClassName() const { return L"AI_Assistance"; }
 };
 
 class CircleWindow : public BaseWindow<CircleWindow> {
 public:
 
 public:
-    CircleWindow() {
-        class_name = nullptr;
-    }
-
-    CircleWindow(PCWSTR name) {
-        class_name = name;
-    }
+    CircleWindow() { }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    PCWSTR ClassName() const { return L" "; }
 };

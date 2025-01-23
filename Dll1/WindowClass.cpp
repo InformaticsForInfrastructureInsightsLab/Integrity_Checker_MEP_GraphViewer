@@ -1,5 +1,5 @@
 #include "framework.h"
-#include "WindowClass.h" 
+#include "WindowClass.hpp" 
 
 using namespace Gdiplus;
 extern Image* image;
