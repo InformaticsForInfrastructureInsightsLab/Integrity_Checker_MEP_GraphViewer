@@ -4,35 +4,28 @@
 using namespace Gdiplus;
 extern Image* image;
 
-LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(m_hwnd, &ps);
+BOOL MainWindow::Create(PCWSTR lpWindowName,
+    DWORD dwStyle, DWORD dwExStyle,
+    int x, int y, int nWidth, int nHeight,
+    HWND hWndParent, HMENU hMenu) {
 
-        // 동그라미 그리기
-        HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 255)); // 파란색
-        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-        Ellipse(hdc, 0, 0, 100, 100); // 동그라미 크기
-        SelectObject(hdc, hOldBrush);
-        DeleteObject(hBrush);
+    WNDCLASS wc = { 0 };
 
-        EndPaint(m_hwnd, &ps);
-    }
-                 break;
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = ClassName();
+    RegisterClass(&wc);
 
-    case WM_LBUTTONDOWN:
-        MessageBox(m_hwnd, L"동그라미가 클릭되었습니다!", L"이벤트 발생", MB_OK);
-        break;
+    RECT size = { 0, 0, 950, 600 };
+    AdjustWindowRect(&size, dwStyle, FALSE);
 
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
+    m_hwnd = CreateWindow(
+        ClassName(), lpWindowName, dwStyle, x, y,
+        size.right - size.left, size.bottom - size.top, 
+        hWndParent, hMenu, GetModuleHandle(NULL), this
+    );
 
-    default:
-        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
+    return (m_hwnd ? TRUE : FALSE);
 }
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -113,6 +106,95 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         UnregisterClass(L"MyWindowClass", GetModuleHandle(NULL));
         PostQuitMessage(0);
         break;
+    default:
+        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
+}
+
+LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    static float scale = 1.0f;
+    static float offsetX, offsetY;
+
+    switch (uMsg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(m_hwnd, &ps);
+
+        // 배경을 흰색으로 지움
+        HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 255));
+        FillRect(hdc, &ps.rcPaint, hBrush);
+        DeleteObject(hBrush);
+
+        // 배율과 오프셋을 적용
+        SetMapMode(hdc, MM_ANISOTROPIC);
+        SetWindowExtEx(hdc, 1000, 1000, NULL);
+        SetViewportExtEx(hdc, (int)(1000 * scale), (int)(1000 * scale), NULL);
+        SetViewportOrgEx(hdc, (int)(-offsetX * scale), (int)(-offsetY * scale), NULL);
+
+        EndPaint(m_hwnd, &ps);
+    }
+    break;
+
+    case WM_MOUSEWHEEL: {
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam); // 마우스 휠 이동 값
+        float oldScale = scale;
+
+        // 배율 조정
+        if (delta > 0) {
+            scale += 0.1f; // 확대
+        }
+        else if (delta < 0) {
+            scale -= 0.1f; // 축소
+            if (scale < 0.1f) scale = 0.1f; // 최소 배율 제한
+        }
+
+        // 마우스 위치를 얻음
+        POINT cursorPos;
+        GetCursorPos(&cursorPos); // 화면 좌표 얻기
+        ScreenToClient(m_hwnd, &cursorPos); // 클라이언트 좌표로 변환
+
+        // 마우스 위치를 기준으로 오프셋을 조정
+        float mouseX = cursorPos.x / oldScale + offsetX; // 기존 배율에서의 마우스 X 좌표
+        float mouseY = cursorPos.y / oldScale + offsetY; // 기존 배율에서의 마우스 Y 좌표
+
+        offsetX = mouseX - cursorPos.x / scale; // 새로운 배율에 맞춘 X축 오프셋
+        offsetY = mouseY - cursorPos.y / scale; // 새로운 배율에 맞춘 Y축 오프셋
+
+        // 화면 다시 그리기
+        InvalidateRect(m_hwnd, NULL, TRUE);
+    }
+    break;
+    default:
+        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+    }
+}
+
+LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(m_hwnd, &ps);
+
+        // 동그라미 그리기
+        HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 255)); // 파란색
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+        Ellipse(hdc, 0, 0, 100, 100); // 동그라미 크기
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hBrush);
+
+        EndPaint(m_hwnd, &ps);
+    }
+    break;
+
+    case WM_LBUTTONDOWN:
+        MessageBox(m_hwnd, L"동그라미가 클릭되었습니다!", L"이벤트 발생", MB_OK);
+        break;
+
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }

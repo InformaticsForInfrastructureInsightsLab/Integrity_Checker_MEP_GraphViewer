@@ -5,6 +5,7 @@
 
 MainWindow win;
 CircleWindow c1, c2;
+PanelWindow panel;
 
 using namespace Gdiplus;
 Image* image;
@@ -18,6 +19,11 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
     if (!win.Create(L"Ai Assistance", WS_OVERLAPPEDWINDOW))
+    {
+        return 0;
+    }
+    if (!panel.Create(L"panel", WS_CHILD | WS_VISIBLE | SS_WHITERECT, 0,
+        10,5,930,340, win.m_hwnd))
     {
         return 0;
     }
