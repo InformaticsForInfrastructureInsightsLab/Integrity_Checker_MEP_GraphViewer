@@ -45,10 +45,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             0, L"BUTTON", L"SEND",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
             850, 500, 90, 90,
-            m_hwnd, (HMENU)0001, GetModuleHandle(NULL), nullptr
+            m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
 
-        //모델 답변
+        // 모델 답변
         hAnswer = CreateWindowEx(
             WS_EX_CLIENTEDGE,
             L"EDIT",
@@ -57,11 +57,25 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             10, 350, 930, 140,
             m_hwnd, (HMENU)1002,
             GetModuleHandle(NULL), nullptr);
+
+        // 그래프 패널
+        hPanel = CreateWindowEx(
+            WS_EX_CLIENTEDGE,       
+            L"STATIC",              
+            nullptr,                
+            WS_CHILD | WS_VISIBLE | SS_BLACKRECT, 
+            0, 0, 950, 490,       
+            m_hwnd, (HMENU)3001, 
+            GetModuleHandle(NULL), nullptr);
+
         break;
 
     case WM_COMMAND:
-        if (LOWORD(wParam) == 1) {
+        if (LOWORD(wParam) == 2001) {
             //g_callback();
+        }
+        else if (LOWORD(wParam) == 3001) {
+            MessageBox(m_hwnd, L"패널이 클릭되었습니다!", L"알림", MB_OK | MB_ICONINFORMATION);
         }
         break;
     case WM_PAINT: {
@@ -199,4 +213,28 @@ LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }
     return 0;
+}
+
+BOOL PanelWindow::Create(PCWSTR lpWindowName,
+    DWORD dwStyle, DWORD dwExStyle,
+    int x, int y, int nWidth, int nHeight,
+    HWND hWndParent, HMENU hMenu) {
+
+    WNDCLASS wc = { 0 };
+
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = ClassName();
+    RegisterClass(&wc);
+
+    RECT size = { x, y, nWidth, nHeight };
+    AdjustWindowRect(&size, dwStyle, FALSE);
+
+    m_hwnd = CreateWindow(
+        ClassName(), lpWindowName, dwStyle, x, y,
+        size.right - size.left, size.bottom - size.top,
+        hWndParent, hMenu, GetModuleHandle(NULL), this
+    );
+
+    return (m_hwnd ? TRUE : FALSE);
 }

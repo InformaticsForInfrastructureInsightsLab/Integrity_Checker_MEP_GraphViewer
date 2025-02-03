@@ -70,12 +70,13 @@ protected:
 
 class MainWindow : public BaseWindow<MainWindow> {
 public:
-    HWND hEdit, hButton, hAnswer;
+    HWND hEdit, hButton, hAnswer, hPanel;
 public:
     MainWindow() {
         hEdit = nullptr;
         hButton = nullptr;
         hAnswer = nullptr;
+        hPanel = nullptr;
     }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -109,4 +110,14 @@ public:
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     PCWSTR ClassName() const { return L"STATIC"; }
+
+    BOOL Create(PCWSTR lpWindowName,
+        DWORD dwStyle, DWORD dwExStyle = 0,
+        int x = CW_USEDEFAULT,
+        int y = CW_USEDEFAULT,
+        int nWidth = CW_USEDEFAULT,
+        int nHeight = CW_USEDEFAULT,
+        HWND hWndParent = 0,
+        HMENU hMenu = 0
+    );
 };

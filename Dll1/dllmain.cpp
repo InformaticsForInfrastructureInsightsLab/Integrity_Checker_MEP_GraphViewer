@@ -22,11 +22,6 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
     {
         return 0;
     }
-    if (!panel.Create(L"panel", WS_CHILD | WS_VISIBLE | SS_WHITERECT, 0,
-        10,5,930,340, win.m_hwnd))
-    {
-        return 0;
-    }
 
     ShowWindow(win.m_hwnd, SW_SHOW);
 
