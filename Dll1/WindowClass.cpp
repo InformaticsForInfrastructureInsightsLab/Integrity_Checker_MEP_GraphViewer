@@ -4,6 +4,9 @@
 using namespace Gdiplus;
 extern Image* image;
 
+#include "utils.hpp"
+extern CallbackFunc g_callback;
+
 BOOL MainWindow::Create(PCWSTR lpWindowName,
     DWORD dwStyle, DWORD dwExStyle,
     int x, int y, int nWidth, int nHeight,
@@ -64,7 +67,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             L"STATIC",              
             nullptr,                
             WS_CHILD | WS_VISIBLE | SS_BLACKRECT, 
-            0, 0, 950, 490,       
+            0, 0, 950, 340,       
             m_hwnd, (HMENU)3001, 
             GetModuleHandle(NULL), nullptr);
 
@@ -72,7 +75,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
-            //g_callback();
+            g_callback();
         }
         else if (LOWORD(wParam) == 3001) {
             MessageBox(m_hwnd, L"패널이 클릭되었습니다!", L"알림", MB_OK | MB_ICONINFORMATION);
