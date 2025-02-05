@@ -71,7 +71,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             0, 0, 950, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
-        //mainWndProc = (WNDPROC)SetWindowLongPtr(panel->m_hwnd, GWLP_WNDPROC, (LONG_PTR)PanelWindow::WindowProc);
+
+        mainWndProc = (WNDPROC)SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(PanelWindow::WindowProc));
         break;
 
     case WM_COMMAND:
@@ -156,7 +157,9 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         EndPaint(m_hwnd, &ps);
     }
     break;
-
+    case WM_LBUTTONDOWN:
+        MessageBox(m_hwnd, L"panel_clicked", L" ", MB_OK);
+        break;
     case WM_MOUSEWHEEL: {
         int delta = GET_WHEEL_DELTA_WPARAM(wParam); // 마우스 휠 이동 값
         float oldScale = scale;
