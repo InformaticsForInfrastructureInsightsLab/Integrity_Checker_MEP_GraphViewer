@@ -7,6 +7,9 @@ extern Image* image;
 #include "utils.hpp"
 extern CallbackFunc g_callback;
 
+WNDPROC mainWndProc;
+
+#pragma region MainWindow
 BOOL MainWindow::Create(PCWSTR lpWindowName,
     DWORD dwStyle, DWORD dwExStyle,
     int x, int y, int nWidth, int nHeight,
@@ -62,15 +65,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             GetModuleHandle(NULL), nullptr);
 
         // 그래프 패널
-        hPanel = CreateWindowEx(
-            WS_EX_CLIENTEDGE,       
-            L"STATIC",              
-            nullptr,                
-            WS_CHILD | WS_VISIBLE | SS_BLACKRECT, 
-            0, 0, 950, 340,       
-            m_hwnd, (HMENU)3001, 
-            GetModuleHandle(NULL), nullptr);
-
+        panel = new PanelWindow();
+        if (!panel->Create(L"GraphPanel",
+            WS_CHILD | WS_VISIBLE | SS_BLACKRECT | SS_NOTIFY, 0,
+            0, 0, 950, 340, m_hwnd, (HMENU)3001)) {
+            MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
+        }
+        //mainWndProc = (WNDPROC)SetWindowLongPtr(panel->m_hwnd, GWLP_WNDPROC, (LONG_PTR)PanelWindow::WindowProc);
         break;
 
     case WM_COMMAND:
@@ -128,7 +129,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
     return 0;
 }
+#pragma endregion
 
+
+#pragma region PanelWindow
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 1.0f;
     static float offsetX, offsetY;
@@ -180,13 +184,34 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 화면 다시 그리기
         InvalidateRect(m_hwnd, NULL, TRUE);
+        MessageBox(m_hwnd, L"mouse wheel", L" ", MB_OK);
     }
     break;
     default:
-        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+        return CallWindowProc(mainWndProc, m_hwnd, uMsg, wParam, lParam);
     }
 }
 
+BOOL PanelWindow::Create(PCWSTR lpWindowName,
+    DWORD dwStyle, DWORD dwExStyle,
+    int x, int y, int nWidth, int nHeight,
+    HWND hWndParent, HMENU hMenu) {
+
+    RECT size = { x,y,nWidth,nHeight };
+    AdjustWindowRect(&size, dwStyle, FALSE);
+
+    m_hwnd = CreateWindow(
+        ClassName(), lpWindowName, dwStyle, x, y,
+        size.right - size.left, size.bottom - size.top,
+        hWndParent, hMenu, GetModuleHandle(NULL), this
+    );
+
+    return (m_hwnd ? TRUE : FALSE);
+}
+#pragma endregion
+
+
+#pragma region CircleWindow
 LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_PAINT: {
@@ -202,7 +227,7 @@ LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         EndPaint(m_hwnd, &ps);
     }
-    break;
+                 break;
 
     case WM_LBUTTONDOWN:
         MessageBox(m_hwnd, L"동그라미가 클릭되었습니다!", L"이벤트 발생", MB_OK);
@@ -218,26 +243,4 @@ LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
-BOOL PanelWindow::Create(PCWSTR lpWindowName,
-    DWORD dwStyle, DWORD dwExStyle,
-    int x, int y, int nWidth, int nHeight,
-    HWND hWndParent, HMENU hMenu) {
-
-    WNDCLASS wc = { 0 };
-
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = ClassName();
-    RegisterClass(&wc);
-
-    RECT size = { x, y, nWidth, nHeight };
-    AdjustWindowRect(&size, dwStyle, FALSE);
-
-    m_hwnd = CreateWindow(
-        ClassName(), lpWindowName, dwStyle, x, y,
-        size.right - size.left, size.bottom - size.top,
-        hWndParent, hMenu, GetModuleHandle(NULL), this
-    );
-
-    return (m_hwnd ? TRUE : FALSE);
-}
+#pragma endregion
