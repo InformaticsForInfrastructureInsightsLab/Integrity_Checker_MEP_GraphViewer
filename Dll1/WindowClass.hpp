@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#include "Graph.hpp"
 
 template <class DERIVED_TYPE>
 class BaseWindow
@@ -70,12 +71,13 @@ protected:
 
 class PanelWindow : public BaseWindow<PanelWindow> {
 public:
+    int width, height;
 
 public:
     PanelWindow() { }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
-    PCWSTR ClassName() const { return L"STATIC"; }
+    PCWSTR ClassName() const { return L"CustomPanel"; }
 
     BOOL Create(PCWSTR lpWindowName,
         DWORD dwStyle, DWORD dwExStyle = 0,
@@ -111,6 +113,8 @@ public:
         HWND hWndParent = 0,
         HMENU hMenu = 0
     );
+
+    bool RenderGraph(Graph&& graph);
 };
 
 class CircleWindow : public BaseWindow<CircleWindow> {
@@ -121,4 +125,13 @@ public:
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     PCWSTR ClassName() const { return L" "; }
+    BOOL Create(PCWSTR lpWindowName,
+        DWORD dwStyle, DWORD dwExStyle = 0,
+        int x = CW_USEDEFAULT,
+        int y = CW_USEDEFAULT,
+        int nWidth = CW_USEDEFAULT,
+        int nHeight = CW_USEDEFAULT,
+        HWND hWndParent = 0,
+        HMENU hMenu = 0
+    );
 };

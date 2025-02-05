@@ -1,30 +1,33 @@
 #include "Graph.hpp"
 
-Graph::Graph(nlohmann::json json) {
+Graph::Graph(nlohmann::json& json) {
 	for (auto& clash : json) {
-		node_map[clash["m"]["properties"]["GUID"]] = new node(clash["m"]["properties"]);
-		node_map[clash["n"]["properties"]["GUID"]] = new node(clash["n"]["properties"]);
+		node_map[clash["m"]["properties"]["GUID"]] = std::make_unique<node>(clash["m"]["properties"]);
+		node_map[clash["n"]["properties"]["GUID"]] = std::make_unique<node>(clash["n"]["properties"]);
 		edge rel(clash["r"]);
 		rel.start_node = clash["m"]["properties"]["GUID"];
 		rel.end_node = clash["n"]["properties"]["GUID"];
-		edge_vec.push_back(rel);
+		edge_vec.push_back(std::make_unique<edge>(rel));
 	}
 }
 
-void Graph::visualize() {
-	GVC_t* gvc = gvContext();  // Graphviz context 생성
-	char graph_name[] = "Neo4j Graph";
-	Agraph_t* g = agopen(static_cast<char*>(graph_name), Agundirected, NULL);  // 무향 그래프 생성
+Graph::~Graph() {
+	gvFreeLayout(gvc.get(), g.get());
+}
+
+void Graph::buildGraph() {
+	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context 생성
+	g = std::unique_ptr<Agraph_t, GraphDeleter>(agopen(const_cast<char*>("Neo4jGraph"), Agstrictdirected, nullptr));
 
 	//set size
-	agsafeset(g, const_cast<char*>("size"), const_cast<char*>("5,5"), const_cast<char*>(""));
+	agsafeset(g.get(), const_cast<char*>("size"), const_cast<char*>("5,5"), const_cast<char*>(""));
 
 	for (auto& clash : edge_vec) {
-		node* start_node = node_map[clash.start_node];
-		node* end_node = node_map[clash.end_node];
+		node* start_node = node_map[clash->start_node].get();
+		node* end_node = node_map[clash->end_node].get();
 
-		Agnode_t* n1 = agnode(g, const_cast<char*>(start_node->ElementType.c_str()), TRUE);
-		Agnode_t* n2 = agnode(g, const_cast<char*>(end_node->ElementType.c_str()), TRUE);
+		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->ElementType.c_str()), TRUE);
+		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->ElementType.c_str()), TRUE);
 
 		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
 		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용
@@ -35,15 +38,12 @@ void Graph::visualize() {
 		agsafeset(n2, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // 내부 색상
 
 
-		agedge(g, n1, n2, NULL, TRUE);
+		agedge(g.get(), n1, n2, NULL, TRUE);
 	}
 
-	// 그래프 레이아웃 및 렌더링
-	gvLayout(gvc, g, "circo");
-	gvRenderFilename(gvc, g, "png", "C:/objectinfo/gpt_visualize.png");
+	gvLayout(gvc.get(), g.get(), "circo");
+}
 
-	// 리소스 해제
-	gvFreeLayout(gvc, g);
-	agclose(g);
-	gvFreeContext(gvc);
+void Graph::exportGraphImage() {
+	gvRenderFilename(gvc.get(), g.get(), "png", "C:/objectinfo/gpt_visualize.png");
 }

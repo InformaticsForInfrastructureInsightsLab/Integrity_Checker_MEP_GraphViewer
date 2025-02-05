@@ -8,7 +8,6 @@ CircleWindow c1, c2;
 PanelWindow panel;
 
 using namespace Gdiplus;
-Image* image;
 HINSTANCE hInstance;
 
 // program entry point
@@ -33,8 +32,6 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
         DispatchMessage(&msg);
     }
 
-    delete image;
-    image = nullptr;
     GdiplusShutdown(gdiplusToken);
 
     return static_cast<int>(msg.wParam);

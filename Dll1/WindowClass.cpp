@@ -2,12 +2,11 @@
 #include "WindowClass.hpp" 
 
 using namespace Gdiplus;
-extern Image* image;
 
 #include "utils.hpp"
 extern CallbackFunc g_callback;
 
-WNDPROC mainWndProc;
+extern MainWindow win;
 
 #pragma region MainWindow
 BOOL MainWindow::Create(PCWSTR lpWindowName,
@@ -35,6 +34,7 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 }
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
     switch (uMsg) {
     case WM_CREATE:
         // 입력 칸 (Edit Control) 생성
@@ -67,57 +67,17 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 그래프 패널
         panel = new PanelWindow();
         if (!panel->Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | SS_BLACKRECT | SS_NOTIFY, 0,
+            WS_CHILD | WS_VISIBLE | SS_GRAYRECT | SS_NOTIFY, 0,
             0, 0, 950, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
-
-        mainWndProc = (WNDPROC)SetWindowLongPtr(m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(PanelWindow::WindowProc));
         break;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
         }
-        else if (LOWORD(wParam) == 3001) {
-            MessageBox(m_hwnd, L"패널이 클릭되었습니다!", L"알림", MB_OK | MB_ICONINFORMATION);
-        }
         break;
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(m_hwnd, &ps);
-
-        // 배경을 흰색으로 채우기
-        HBRUSH whiteBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
-        FillRect(hdc, &ps.rcPaint, whiteBrush);
-
-        // GDI+ Graphics 객체 생성
-        Graphics graphics(hdc);
-
-        // 이미지 그리기
-        if (image)
-        {
-            RECT clientRect;
-            GetClientRect(m_hwnd, &clientRect);
-
-            int img_region_width = 950;
-            int img_region_height = 350;
-
-            // 이미지 크기 가져오기
-            int imageWidth = image->GetWidth();
-            int imageHeight = image->GetHeight();
-
-            // 중앙 좌표 계산
-            int x = (img_region_width - imageWidth) / 2;
-            int y = (img_region_height - imageHeight) / 2;
-
-            // 이미지 그리기
-            graphics.DrawImage(image, x, y, imageWidth, imageHeight);
-        }
-
-        EndPaint(m_hwnd, &ps);
-        break;
-    }
     case WM_CLOSE:
         DestroyWindow(m_hwnd);
         break;
@@ -134,6 +94,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 
 #pragma region PanelWindow
+extern MainWindow win;
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 1.0f;
     static float offsetX, offsetY;
@@ -148,6 +109,8 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         FillRect(hdc, &ps.rcPaint, hBrush);
         DeleteObject(hBrush);
 
+        Ellipse(hdc, 50, 50, 150, 150);
+
         // 배율과 오프셋을 적용
         SetMapMode(hdc, MM_ANISOTROPIC);
         SetWindowExtEx(hdc, 1000, 1000, NULL);
@@ -155,11 +118,11 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         SetViewportOrgEx(hdc, (int)(-offsetX * scale), (int)(-offsetY * scale), NULL);
 
         EndPaint(m_hwnd, &ps);
+        break;
     }
-    break;
     case WM_LBUTTONDOWN:
         MessageBox(m_hwnd, L"panel_clicked", L" ", MB_OK);
-        break;
+        return 0;
     case WM_MOUSEWHEEL: {
         int delta = GET_WHEEL_DELTA_WPARAM(wParam); // 마우스 휠 이동 값
         float oldScale = scale;
@@ -188,11 +151,12 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 화면 다시 그리기
         InvalidateRect(m_hwnd, NULL, TRUE);
         MessageBox(m_hwnd, L"mouse wheel", L" ", MB_OK);
+        return 0;
     }
-    break;
     default:
-        return CallWindowProc(mainWndProc, m_hwnd, uMsg, wParam, lParam);
+        break;
     }
+    return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }
 
 BOOL PanelWindow::Create(PCWSTR lpWindowName,
@@ -200,12 +164,23 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
     int x, int y, int nWidth, int nHeight,
     HWND hWndParent, HMENU hMenu) {
 
+    WNDCLASS wc = { 0 };
+
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = ClassName();
+    wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    RegisterClass(&wc);
+
     RECT size = { x,y,nWidth,nHeight };
     AdjustWindowRect(&size, dwStyle, FALSE);
 
+    width = size.right - size.left;
+    height = size.bottom - size.top;
+
     m_hwnd = CreateWindow(
-        ClassName(), lpWindowName, dwStyle, x, y,
-        size.right - size.left, size.bottom - size.top,
+        ClassName(), lpWindowName, dwStyle, 
+        x, y, width, height,
         hWndParent, hMenu, GetModuleHandle(NULL), this
     );
 
@@ -217,33 +192,21 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 #pragma region CircleWindow
 LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(m_hwnd, &ps);
-
-        // 동그라미 그리기
-        HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 255)); // 파란색
-        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-        Ellipse(hdc, 0, 0, 100, 100); // 동그라미 크기
-        SelectObject(hdc, hOldBrush);
-        DeleteObject(hBrush);
-
-        EndPaint(m_hwnd, &ps);
-    }
-                 break;
-
-    case WM_LBUTTONDOWN:
-        MessageBox(m_hwnd, L"동그라미가 클릭되었습니다!", L"이벤트 발생", MB_OK);
-        break;
-
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }
     return 0;
 }
 
+BOOL CircleWindow::Create(PCWSTR lpWindowName,
+    DWORD dwStyle, DWORD dwExStyle,
+    int x, int y, int nWidth, int nHeight,
+    HWND hWndParent, HMENU hMenu) {
+
+    WNDCLASS wc = { 0 };
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = ClassName();
+    return (RegisterClass(&wc) != 0);
+}
 #pragma endregion

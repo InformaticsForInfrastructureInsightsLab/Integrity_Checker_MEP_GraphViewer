@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 
 #define GVDLL
 #include <graphviz/gvc.h>
@@ -74,14 +75,36 @@ struct edge {
 	}
 };
 
+struct GraphDeleter {
+	void operator()(Agraph_t* graph) const {
+		if (graph) {
+			agclose(graph);
+		}
+	}
+};
+
+// Graphviz 컨텍스트 해제용 커스텀 Deleter
+struct GVCDeleter {
+	void operator()(GVC_t* gvc) const {
+		if (gvc) {
+			gvFreeContext(gvc);
+		}
+	}
+};
+
 class Graph {
-	std::map<std::string, node*> node_map;
-	std::vector<edge> edge_vec;
+	std::map<std::string, std::unique_ptr<node>> node_map;
+	std::vector<std::unique_ptr<edge>> edge_vec;
+
+	std::unique_ptr<GVC_t, GVCDeleter> gvc;
+	std::unique_ptr<Agraph_t, GraphDeleter> g;
 
 public:
-	Graph(nlohmann::json json);
+	Graph(nlohmann::json& json);
+	~Graph();
 
-	void visualize();
+	void buildGraph();
+	void exportGraphImage();
 };
 
 #endif //GRAPH_H

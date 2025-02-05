@@ -1,9 +1,9 @@
 #include "utils.hpp"
 
 extern MainWindow win;
+extern PanelWindow panel;
 
 using namespace Gdiplus;
-extern Image* image;
 
 std::string LpwstrToString(LPWSTR str) {
 	// 변환에 필요한 버퍼 크기 계산
@@ -19,17 +19,15 @@ std::string LpwstrToString(LPWSTR str) {
 template<typename T>
 typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>, void>
 BuildGraph(T&& json_string) {
-	if (image) {
-		delete image;
-	}
 
 	nlohmann::json json = nlohmann::json::parse(json_string);
 	Graph graph(json);
-	graph.visualize();
+	graph.buildGraph();
+	graph.exportGraphImage();
 
-	image = new Image(L"C:/objectinfo/gpt_visualize.png");
-	RECT client_rect = { 0,0,900,500 };
-	InvalidateRect(win.m_hwnd, &client_rect, TRUE);
+	//image = new Image(L"C:/objectinfo/gpt_visualize.png");
+	RECT client_rect = { 0,0,950,500 };
+	InvalidateRect(panel.m_hwnd, &client_rect, TRUE);
 }
 
 // 콜백 함수 포인터 저장 변수
