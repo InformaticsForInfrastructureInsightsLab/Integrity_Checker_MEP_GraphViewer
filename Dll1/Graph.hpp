@@ -105,6 +105,17 @@ public:
 
 	void buildGraph();
 	void exportGraphImage();
+	void RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY);
+
+private:
+	Agnode_t* FindNode(std::string attr) {
+		for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
+			if (std::string(agget(node, const_cast<char*>("guid"))) == attr) {
+				return node;
+			}
+		}
+		return nullptr;
+	}
 };
 
 #endif //GRAPH_H

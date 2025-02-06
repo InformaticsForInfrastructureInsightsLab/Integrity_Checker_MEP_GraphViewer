@@ -99,8 +99,21 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 1.0f;
     static float offsetX, offsetY;
 
+    static HBITMAP hBitmap = nullptr;
+    static HDC hMemDC = nullptr;
+
     switch (uMsg) {
-    case WM_PAINT: {
+    case WM_CREATE: {
+        HDC hdc = GetDC(m_hwnd);
+        hMemDC = CreateCompatibleDC(hdc);
+        hBitmap = CreateCompatibleBitmap(hdc, width, height);
+        SelectObject(hMemDC, hBitmap);
+        ReleaseDC(m_hwnd, hdc);
+    }
+    break;
+    case WM_UPDATE_GRAPH: {
+        Graph* graph = reinterpret_cast<Graph*>(lParam);
+
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
 
@@ -109,52 +122,31 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         FillRect(hdc, &ps.rcPaint, hBrush);
         DeleteObject(hBrush);
 
-        Ellipse(hdc, 50, 50, 150, 150);
-
-        // 배율과 오프셋을 적용
-        SetMapMode(hdc, MM_ANISOTROPIC);
-        SetWindowExtEx(hdc, 1000, 1000, NULL);
-        SetViewportExtEx(hdc, (int)(1000 * scale), (int)(1000 * scale), NULL);
-        SetViewportOrgEx(hdc, (int)(-offsetX * scale), (int)(-offsetY * scale), NULL);
-
+        graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
         EndPaint(m_hwnd, &ps);
+
+        delete graph;
         break;
     }
-    case WM_LBUTTONDOWN:
-        MessageBox(m_hwnd, L"panel_clicked", L" ", MB_OK);
-        return 0;
     case WM_MOUSEWHEEL: {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam); // 마우스 휠 이동 값
-        float oldScale = scale;
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // 휠 방향 (120 또는 -120)
+        POINT cursor;
+        GetCursorPos(&cursor);
+        ScreenToClient(m_hwnd, &cursor);  // 윈도우 기준 좌표로 변환
 
-        // 배율 조정
-        if (delta > 0) {
-            scale += 0.1f; // 확대
-        }
-        else if (delta < 0) {
-            scale -= 0.1f; // 축소
-            if (scale < 0.1f) scale = 0.1f; // 최소 배율 제한
-        }
+        double oldScale = scale;
+        scale += (delta > 0) ? 0.1 : -0.1;
+        if (scale < 0.1) scale = 0.1;
 
-        // 마우스 위치를 얻음
-        POINT cursorPos;
-        GetCursorPos(&cursorPos); // 화면 좌표 얻기
-        ScreenToClient(m_hwnd, &cursorPos); // 클라이언트 좌표로 변환
+        // 마우스 좌표 중심으로 확대/축소 변환
+        offsetX = cursor.x - (cursor.x - offsetX) * (scale / oldScale);
+        offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
-        // 마우스 위치를 기준으로 오프셋을 조정
-        float mouseX = cursorPos.x / oldScale + offsetX; // 기존 배율에서의 마우스 X 좌표
-        float mouseY = cursorPos.y / oldScale + offsetY; // 기존 배율에서의 마우스 Y 좌표
-
-        offsetX = mouseX - cursorPos.x / scale; // 새로운 배율에 맞춘 X축 오프셋
-        offsetY = mouseY - cursorPos.y / scale; // 새로운 배율에 맞춘 Y축 오프셋
-
-        // 화면 다시 그리기
-        InvalidateRect(m_hwnd, NULL, TRUE);
-        MessageBox(m_hwnd, L"mouse wheel", L" ", MB_OK);
-        return 0;
-    }
-    default:
+        // 커스텀 이벤트로 원 다시 그리기 요청
+        PostMessage(m_hwnd, WM_UPDATE_GRAPH, 0, 0);
         break;
+    }
     }
     return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }

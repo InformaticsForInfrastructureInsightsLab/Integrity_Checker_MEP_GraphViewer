@@ -72,7 +72,7 @@ protected:
 class PanelWindow : public BaseWindow<PanelWindow> {
 public:
     int width, height;
-
+   
 public:
     PanelWindow() { }
 

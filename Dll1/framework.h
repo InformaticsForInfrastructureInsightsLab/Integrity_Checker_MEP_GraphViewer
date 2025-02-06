@@ -11,3 +11,5 @@
 #pragma comment (lib, "gdiplus.lib")
 #include <gdiplus.h>
 
+// 윈도우 커스텀 유저 메시지
+#define WM_UPDATE_GRAPH (WM_USER+1)
