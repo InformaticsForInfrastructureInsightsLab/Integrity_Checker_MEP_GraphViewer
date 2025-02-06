@@ -17,7 +17,7 @@ Graph::~Graph() {
 
 void Graph::buildGraph() {
 	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context »ý¼º
-	g = std::unique_ptr<Agraph_t, GraphDeleter>(agopen(const_cast<char*>("Neo4jGraph"), Agstrictdirected, nullptr));
+	g = std::unique_ptr<Agraph_t, GraphDeleter>(agopen(const_cast<char*>("Neo4jGraph"), Agundirected, nullptr));
 
 	//set size
 	agsafeset(g.get(), const_cast<char*>("size"), const_cast<char*>("5,5"), const_cast<char*>(""));
