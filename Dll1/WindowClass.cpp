@@ -102,6 +102,8 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static HBITMAP hBitmap = nullptr;
     static HDC hMemDC = nullptr;
 
+    static Graph* graph = nullptr;
+
     switch (uMsg) {
     case WM_CREATE: {
         HDC hdc = GetDC(m_hwnd);
@@ -112,7 +114,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
     break;
     case WM_UPDATE_GRAPH: {
-        Graph* graph = reinterpret_cast<Graph*>(lParam);
+        graph = reinterpret_cast<Graph*>(lParam);
 
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
@@ -122,7 +124,9 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         FillRect(hdc, &ps.rcPaint, hBrush);
         DeleteObject(hBrush);
 
-        graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        if (graph)
+            graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
         EndPaint(m_hwnd, &ps);
 
@@ -144,7 +148,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
         // 커스텀 이벤트로 원 다시 그리기 요청
-        PostMessage(m_hwnd, WM_UPDATE_GRAPH, 0, 0);
+        PostMessage(m_hwnd, WM_UPDATE_GRAPH, 0, reinterpret_cast<LPARAM>(graph));
         break;
     }
     }
