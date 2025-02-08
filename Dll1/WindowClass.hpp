@@ -93,13 +93,11 @@ public:
 class MainWindow : public BaseWindow<MainWindow> {
 public:
     HWND hEdit, hButton, hAnswer;
-    PanelWindow* panel;
 public:
     MainWindow() {
         hEdit = nullptr;
         hButton = nullptr;
         hAnswer = nullptr;
-        panel = nullptr;
     }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);

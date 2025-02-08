@@ -7,6 +7,7 @@ using namespace Gdiplus;
 extern CallbackFunc g_callback;
 
 extern MainWindow win;
+extern PanelWindow panel;
 
 #pragma region MainWindow
 BOOL MainWindow::Create(PCWSTR lpWindowName,
@@ -65,8 +66,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             GetModuleHandle(NULL), nullptr);
 
         // 그래프 패널
-        panel = new PanelWindow();
-        if (!panel->Create(L"GraphPanel",
+        if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | SS_GRAYRECT | SS_NOTIFY, 0,
             0, 0, 950, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
@@ -148,7 +148,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
         // 커스텀 이벤트로 원 다시 그리기 요청
-        PostMessage(m_hwnd, WM_UPDATE_GRAPH, 0, reinterpret_cast<LPARAM>(graph));
+        //PostMessage(m_hwnd, WM_UPDATE_GRAPH, 0, reinterpret_cast<LPARAM>(graph));
         break;
     }
     }
