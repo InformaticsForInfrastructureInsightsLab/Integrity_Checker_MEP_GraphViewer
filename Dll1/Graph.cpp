@@ -70,41 +70,43 @@ void Graph::exportGraphImage() {
 
 void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY) {
 	boxf bbox = GD_bb(g.get());
-	float g_w = bbox.UR.x - bbox.LL.x;
-	float g_h = bbox.UR.y - bbox.LL.y;
+	float x_min = bbox.LL.x;
+	float y_min = bbox.LL.y;
+	float x_max = bbox.UR.x;
+	float y_max = bbox.UR.y;
+
+	float width = x_max - x_min;
+	float height = y_max - y_min;
 
 	Agnode_t* sample_node = agfstnode(g.get());
 
 	for (Agedge_t* edge = agfstedge(g.get(), sample_node); edge; edge = agnxtedge(g.get(), edge, sample_node)) {
-
 		Agnode_t* start = FindNode(agget(edge, const_cast<char*>("start_node")));
 		Agnode_t* end = FindNode(agget(edge, const_cast<char*>("end_node")));
 
-		if (!start || !end) {
-			continue;
+		if (!start) {
+			MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
+		}
+		if (!end) {
+			MessageBox(panel.m_hwnd, L"end is null", L" ", MB_OK);
 		}
 
 		pointf coord_s = ND_coord(start);
 		pointf coord_e = ND_coord(end);
 		double rad_s = max(ND_width(start), ND_height(start));
 		double rad_e = max(ND_width(end), ND_height(end));
-
-		int x = static_cast<int>((coord_s.x - offsetX) * scaleFactor + offsetX);
-		int y = static_cast<int>((coord_s.y - offsetY) * scaleFactor + offsetY);
-		int r = static_cast<int>(rad_s * scaleFactor);
+		
+		int x = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
+		int y = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
+		// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
+		int r_x = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
+		int r_y = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
 
 		HBRUSH hBrush = CreateSolidBrush(RGB(255,165,0));
 		HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
 
-		HPEN hPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
-		HPEN oldPen = (HPEN)SelectObject(hdc, hPen);
-
-		Ellipse(hdc, x - r, y - r, x + r, y + r);
-
+		Ellipse(hdc, x - r_x, y - r_y, x + r_x, y + r_y);
 		SelectObject(hdc, oldBrush);
 		DeleteObject(hBrush);
-
-		SelectObject(hdc, oldPen);
-		DeleteObject(hPen);
 	}
 }

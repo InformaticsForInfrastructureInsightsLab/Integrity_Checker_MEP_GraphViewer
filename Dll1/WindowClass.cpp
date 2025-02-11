@@ -67,7 +67,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | SS_GRAYRECT | SS_NOTIFY, 0,
+            WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY, 0,
             0, 0, 950, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
@@ -97,40 +97,44 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 extern MainWindow win;
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 1.0f;
-    static float offsetX, offsetY;
-
-    static HBITMAP hBitmap = nullptr;
-    static HDC hMemDC = nullptr;
+    static float offsetX = 0, offsetY = 0;
 
     static Graph* graph = nullptr;
 
     switch (uMsg) {
     case WM_CREATE: {
-        HDC hdc = GetDC(m_hwnd);
-        hMemDC = CreateCompatibleDC(hdc);
-        hBitmap = CreateCompatibleBitmap(hdc, width, height);
-        SelectObject(hMemDC, hBitmap);
-        ReleaseDC(m_hwnd, hdc);
+
     }
     break;
     case WM_UPDATE_GRAPH: {
         graph = reinterpret_cast<Graph*>(lParam);
-
+        RECT wnd_sz = { 0,0,width, height };
+        InvalidateRect(m_hwnd, &wnd_sz, true);
+        break;
+    }
+    case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
 
+        // 1. 백버퍼 생성 (메모리 DC)
+        HDC hMemDC = CreateCompatibleDC(hdc);
+        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
+        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
+
         // 배경을 흰색으로 지움
-        HBRUSH hBrush = CreateSolidBrush(RGB(255, 255, 255));
-        FillRect(hdc, &ps.rcPaint, hBrush);
-        DeleteObject(hBrush);
+        PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
         if (graph)
             graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
-        EndPaint(m_hwnd, &ps);
 
-        delete graph;
+        // 5. 리소스 정리
+        SelectObject(hMemDC, hOldBitmap);
+        DeleteObject(hBitmap);
+        DeleteDC(hMemDC);
+
+        EndPaint(m_hwnd, &ps);
         break;
     }
     case WM_MOUSEWHEEL: {
