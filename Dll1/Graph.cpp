@@ -1,5 +1,8 @@
 #include "Graph.hpp"
 
+#include "WindowClass.hpp"
+extern PanelWindow panel;
+
 Graph::Graph(nlohmann::json& json) {
 	for (auto& clash : json) {
 		node_map[clash["m"]["properties"]["GUID"]] = std::make_unique<node>(clash["m"]["properties"]);
@@ -27,9 +30,9 @@ void Graph::buildGraph() {
 		node* end_node = node_map[clash->end_node].get();
 
 		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->ElementType.c_str()), TRUE);
-		agsafeset(g.get(), const_cast<char*>("guid"), const_cast<char*>(start_node->GUID.c_str()), const_cast<char*>("default_value"));
+		agsafeset(n1, const_cast<char*>("guid"), const_cast<char*>(start_node->GUID.c_str()), const_cast<char*>("default_value"));
 		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->ElementType.c_str()), TRUE);
-		agsafeset(g.get(), const_cast<char*>("guid"), const_cast<char*>(end_node->GUID.c_str()), const_cast<char*>("default_value"));
+		agsafeset(n2, const_cast<char*>("guid"), const_cast<char*>(end_node->GUID.c_str()), const_cast<char*>("default_value"));
 
 		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
 		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용
@@ -58,9 +61,7 @@ void Graph::buildGraph() {
 		agsafeset(e, const_cast<char*>("start_node"), const_cast<char*>(clash->start_node.c_str()), const_cast<char*>("default"));
 		agsafeset(e, const_cast<char*>("end_node"), const_cast<char*>(clash->end_node.c_str()), const_cast<char*>("default"));
 	}
-
 	gvLayout(gvc.get(), g.get(), "circo");
-	edge_vec.clear();
 }
 
 void Graph::exportGraphImage() {
@@ -73,10 +74,16 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 	float g_h = bbox.UR.y - bbox.LL.y;
 
 	Agnode_t* sample_node = agfstnode(g.get());
+
 	for (Agedge_t* edge = agfstedge(g.get(), sample_node); edge; edge = agnxtedge(g.get(), edge, sample_node)) {
 
 		Agnode_t* start = FindNode(agget(edge, const_cast<char*>("start_node")));
 		Agnode_t* end = FindNode(agget(edge, const_cast<char*>("end_node")));
+
+		if (!start || !end) {
+			continue;
+		}
+
 		pointf coord_s = ND_coord(start);
 		pointf coord_e = ND_coord(end);
 		double rad_s = max(ND_width(start), ND_height(start));
