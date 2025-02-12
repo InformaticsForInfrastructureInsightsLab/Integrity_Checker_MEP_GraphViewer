@@ -1,5 +1,5 @@
 #include "Graph.hpp"
-
+#include "utils.hpp"
 #include "WindowClass.hpp"
 extern PanelWindow panel;
 
@@ -96,17 +96,65 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 		double rad_s = max(ND_width(start), ND_height(start));
 		double rad_e = max(ND_width(end), ND_height(end));
 		
-		int x = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
-		int y = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
+		// 중점의 x,y좌표
+		int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
+		int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
+		int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
+		int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
 		// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
-		int r_x = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
-		int r_y = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
+		int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
+		int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
+		int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
+		int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
+		
+		std::string node_name_start = agnameof(start);
+		std::string node_name_end = agnameof(end);
 
-		HBRUSH hBrush = CreateSolidBrush(RGB(255,165,0));
-		HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+		DrawNode(hdc, node_name_start ,x_s, y_s, r_xs, r_ys);
+		DrawNode(hdc, node_name_end, x_e, y_e, r_xe, r_ye);
 
-		Ellipse(hdc, x - r_x, y - r_y, x + r_x, y + r_y);
-		SelectObject(hdc, oldBrush);
-		DeleteObject(hBrush);
+		// 원과 선의 교차점 찾기
+		int ix1, iy1, ix2, iy2;
+		GraphUtils::GetIntersectionPoint(x_s, y_s, x_e, y_e, r_xs, ix1, iy1);
+		GraphUtils::GetIntersectionPoint(x_e, y_e, x_s, y_s, r_xe, ix2, iy2);
+
+		// 굵기 5px, 검은색 선 생성
+		HPEN hPen = CreatePen(PS_SOLID, 5, RGB(0, 0, 0));
+		HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+
+		// 원의 경계까지만 선 그리기
+		MoveToEx(hdc, ix1, iy1, nullptr);
+		LineTo(hdc, ix2, iy2);
+
+		// 기존 펜 복원 후 새 펜 삭제
+		SelectObject(hdc, hOldPen);
+		DeleteObject(hPen);
 	}
+}
+
+void Graph::DrawNode(HDC hdc, std::string& name, int x, int y, int rx, int ry) {
+	HBRUSH hBrush = CreateSolidBrush(RGB(255, 165, 0));
+	HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+	// 노드 그리기
+	Ellipse(hdc, x - rx, y - ry, x + rx, y + ry);
+	SelectObject(hdc, oldBrush);
+	DeleteObject(hBrush);
+
+	// 노드에 글자 쓰기
+	int fontSize = static_cast<int>(rx * 0.5);
+	SetBkMode(hdc, TRANSPARENT);
+	SetTextColor(hdc, RGB(0, 0, 0));
+
+	HFONT hFont = CreateFont(
+		fontSize, 0, 0, 0, FALSE, FALSE, FALSE, FALSE,
+		DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Arial")
+	);
+	HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+	SIZE size;
+	GetTextExtentPoint32A(hdc, name.c_str(), name.length(), &size);
+	int text_x = x - (size.cx / 2);
+	int text_y = y - (size.cy / 2);
+	TextOutA(hdc, text_x, text_y, name.c_str(), name.length());
 }

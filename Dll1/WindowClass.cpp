@@ -96,7 +96,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 #pragma region PanelWindow
 extern MainWindow win;
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static float scale = 1.0f;
+    static float scale = 0.7f;
     static float offsetX = 0, offsetY = 0;
 
     static Graph* graph = nullptr;
@@ -107,6 +107,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
     break;
     case WM_UPDATE_GRAPH: {
+        if (!graph) delete graph; //기존 그래프가 있다면 기존 그래프 메모리 할당 해제
         graph = reinterpret_cast<Graph*>(lParam);
         RECT wnd_sz = { 0,0,width, height };
         InvalidateRect(m_hwnd, &wnd_sz, true);
@@ -152,7 +153,8 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
         // 커스텀 이벤트로 원 다시 그리기 요청
-        //PostMessage(m_hwnd, WM_UPDATE_GRAPH, 0, reinterpret_cast<LPARAM>(graph));
+        RECT wnd_sz = { 0,0,width, height };
+        InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
     }
     }

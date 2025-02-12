@@ -116,6 +116,9 @@ private:
 		}
 		return nullptr;
 	}
+
+	void DrawNode(HDC hdc, std::string& name, int x, int y, int rx, int ry);
+	void DrawLine();
 };
 
 #endif //GRAPH_H
