@@ -5,8 +5,6 @@
 extern MainWindow win;
 extern PanelWindow panel;
 
-using namespace Gdiplus;
-
 std::string LpwstrToString(LPWSTR str) {
 	// 변환에 필요한 버퍼 크기 계산
 	int size_needed = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
@@ -34,6 +32,7 @@ BuildGraph(T&& json_string) {
 
 // 콜백 함수 포인터 저장 변수
 CallbackFunc g_callback = nullptr;
+LPWSTR Pcontext = nullptr;
 
 extern "C" {
 	// 콜백 등록 함수
@@ -44,9 +43,13 @@ extern "C" {
 
 	// export user question to extern process
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
-		WCHAR text[256];
+		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
 		return text;
+	}
+
+	__declspec(dllexport) LPCWSTR ForwardPrevContext() {
+		return Pcontext;
 	}
 
 	// get string from extern process
@@ -55,6 +58,7 @@ extern "C" {
 		SetWindowText(win.hAnswer, result);
 
 		try {
+			Pcontext = context;
 			std::string json = LpwstrToString(context);
 			BuildGraph(json);
 		}
