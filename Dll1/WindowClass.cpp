@@ -103,7 +103,12 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     switch (uMsg) {
     case WM_CREATE: {
-
+        // register node class
+        WNDCLASS wc = {};
+        wc.lpfnWndProc = CircleWindow::NodeProc;
+        wc.hInstance = GetModuleHandle(NULL);
+        wc.lpszClassName = L"NODECLASS";
+        RegisterClass(&wc);
     }
     break;
     case WM_UPDATE_GRAPH: {
@@ -192,23 +197,5 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 
 
 #pragma region CircleWindow
-LRESULT CircleWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg) {
-    default:
-        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
-}
 
-BOOL CircleWindow::Create(PCWSTR lpWindowName,
-    DWORD dwStyle, DWORD dwExStyle,
-    int x, int y, int nWidth, int nHeight,
-    HWND hWndParent, HMENU hMenu) {
-
-    WNDCLASS wc = { 0 };
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = ClassName();
-    return (RegisterClass(&wc) != 0);
-}
 #pragma endregion
