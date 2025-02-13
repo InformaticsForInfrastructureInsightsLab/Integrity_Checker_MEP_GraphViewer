@@ -1,75 +1,43 @@
 #pragma once
-#include "pch.h"
 #include <type_traits>
 #include <string>
 
-#include "globals.hpp"
+#include "framework.h"
+#include "WindowClass.hpp"
 #include "Graph.hpp"
-
-std::string LpwstrToString(LPWSTR str) {
-    // 변환에 필요한 버퍼 크기 계산
-    int size_needed = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
-    // 버퍼 할당
-    std::string std_str(size_needed, 0);
-    // 실제 변환 수행
-    WideCharToMultiByte(CP_UTF8, 0, str, -1, &std_str[0], size_needed, NULL, NULL);
-
-    return std_str;
-}
-
-template<typename T>
-typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>, void>
-BuildGraph(T&& json_string) {
-	if (image) {
-		delete image;
-	}
-
-	nlohmann::json json = nlohmann::json::parse(json_string);
-	Graph graph(json);
-	graph.visualize();
-
-	image = new Image(L"C:/objectinfo/gpt_visualize.png");
-	RECT client_rect = { 0,0,900,500 };
-	InvalidateRect(hWnd, &client_rect, TRUE);
-}
 
 // 콜백 함수 타입 정의
 using CallbackFunc = void(__stdcall*)(void);
-// 콜백 함수 포인터 저장 변수
-CallbackFunc g_callback = nullptr;
+
+std::string LpwstrToString(LPWSTR str);
+
+template<typename T>
+typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>, void>
+BuildGraph(T&& json_string);
 
 extern "C" {
 	// 콜백 등록 함수
-	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {
-		SetWindowText(hAnswer, L" ");
-		g_callback = callback;
-	}
+	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback);
 
 	// export user question to extern process
-	__declspec(dllexport) LPCWSTR ForwardQuestion() {
-		WCHAR text[256];
-		GetWindowText(hEdit, text, sizeof(text) / sizeof(WCHAR));
-		return text;
-	}
+	__declspec(dllexport) LPCWSTR ForwardQuestion();
 
 	// get string from extern process
-	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-		// GPT답변창의 텍스트 변경
-		SetWindowText(hAnswer, result);
+	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context);
+}
 
-		try {
-			std::string json = LpwstrToString(context);
-			BuildGraph(json);
-		}
-		catch (const std::exception& e) {
-			wchar_t wcStr[4096];
-			size_t conv_chars;
-			int len = (int)strlen(e.what()) + 1;
-			errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
-			SetWindowText(hAnswer, wcStr);
-
-			if (err != 0)
-				return;
-		}
-	}
+namespace GraphUtils {
+	/// <summary>
+	/// 두 점을 잇는 직선이 원과 교차하는 지점을 계산하는 함수
+	/// 직선 벡터의 방향은 (x1,y1)에서 (x2,y2)방향
+	/// 원의 중심은 (x1,y1)으로 설정
+	/// </summary>
+	/// <param name="x1"> 노드1 중심의 x좌표 </param>
+	/// <param name="y1"> 노드1 중심의 y좌표 </param>
+	/// <param name="x2"> 노드2 중심의  x좌표 </param>
+	/// <param name="y2"> 노드2 중심의  y좌표 </param>
+	/// <param name="r"> 원의 반지름 </param>
+	/// <param name="ix"> 교점의 x좌표를 받을 변수의 레퍼런스 </param>
+	/// <param name="iy"> 교점의 y좌표를 받을 변수의 레퍼런스 </param>
+	void GetIntersectionPoint(int x1, int y1, int x2, int y2, int r, int& ix, int& iy);
 }
