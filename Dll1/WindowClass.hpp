@@ -141,7 +141,6 @@ public:
 
             Ellipse(hdc, centX - radX, centY - radY, centX + radX, centY + radY);
             DeleteObject(hBrush);
-            EndPaint(hwnd, &ps);
 
             // 노드에 글자 쓰기
             Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
@@ -163,6 +162,8 @@ public:
             int text_x = centX - (size.cx / 2);
             int text_y = centY - (size.cy / 2);
             TextOutA(hdc, text_x, text_y, name.c_str(), name.length());
+
+            EndPaint(hwnd, &ps);
         }
         break;
         case WM_LBUTTONDOWN:
