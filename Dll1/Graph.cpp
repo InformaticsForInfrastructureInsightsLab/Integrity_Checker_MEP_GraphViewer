@@ -69,6 +69,11 @@ void Graph::exportGraphImage() {
 }
 
 void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY) {
+	EnumChildWindows(panel.m_hwnd, +[](HWND hwnd, LPARAM lparam) -> int {
+		DestroyWindow(hwnd);
+		return TRUE;
+		}, 0);
+
 	boxf bbox = GD_bb(g.get());
 	float x_min = bbox.LL.x;
 	float y_min = bbox.LL.y;
@@ -117,15 +122,13 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 	size_t rv;
-	char* guid = agnameof(node);
+	char* guid = agget(node, const_cast<char*>("guid"));
 	errno_t err = mbstowcs_s(&rv, nullptr, 0, guid, _TRUNCATE);
 
 	// 2. 변환할 wchar_t 배열 할당
 	wchar_t* wGuid = new wchar_t[rv];
 	// 3. 변환 수행
 	err = mbstowcs_s(&rv, wGuid, rv, guid, _TRUNCATE);
-
-	MessageBox(panel.m_hwnd, wGuid, L" ", MB_OK);
 
 	// 노드 그리기
 	HWND hwnd = CreateWindowEx(0, L"NODECLASS", wGuid,

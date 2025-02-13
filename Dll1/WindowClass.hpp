@@ -115,6 +115,7 @@ public:
     bool RenderGraph(Graph&& graph);
 };
 
+extern PanelWindow panel;
 class CircleWindow {
 public:
     static std::vector<HWND> nodes;
