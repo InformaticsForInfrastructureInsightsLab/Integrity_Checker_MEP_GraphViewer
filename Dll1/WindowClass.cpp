@@ -5,6 +5,7 @@ using namespace Gdiplus;
 
 #include "utils.hpp"
 extern CallbackFunc g_callback;
+extern GUIDExportFunc g_guidExport;
 
 extern MainWindow win;
 extern PanelWindow panel;
@@ -197,5 +198,66 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 
 
 #pragma region CircleWindow
+
+LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg)
+    {
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        HBRUSH hBrush = CreateSolidBrush(RGB(255, 165, 0)); // 빨간색 원
+        SelectObject(hdc, hBrush);
+
+        RECT client;
+        GetClientRect(hwnd, &client);
+        int centX = (client.right + client.left) / 2;
+        int centY = (client.bottom + client.top) / 2;
+        int radX = (client.right - client.left) / 2;
+        int radY = (client.bottom - client.top) / 2;
+
+        Ellipse(hdc, centX - radX, centY - radY, centX + radX, centY + radY);
+        DeleteObject(hBrush);
+
+        // 노드에 글자 쓰기
+        Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        std::string name = agnameof(node);
+
+        int fontSize = static_cast<int>(radX * 0.5);
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(0, 0, 0));
+
+        HFONT hFont = CreateFont(
+            fontSize, 0, 0, 0, FALSE, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Arial")
+        );
+        HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
+        SIZE size;
+
+        GetTextExtentPoint32A(hdc, name.c_str(), name.length(), &size);
+        int text_x = centX - (size.cx / 2);
+        int text_y = centY - (size.cy / 2);
+        TextOutA(hdc, text_x, text_y, name.c_str(), name.length());
+
+        EndPaint(hwnd, &ps);
+    }
+    break;
+    case WM_LBUTTONDOWN: {
+        Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        std::string guid_str = agget(node, const_cast<char*>("guid"));
+        size_t wideLen = 0;
+        mbstowcs_s(&wideLen, nullptr, 0, guid_str.c_str(), _TRUNCATE);
+        LPWSTR guid = new WCHAR[wideLen];
+        mbstowcs_s(&wideLen, guid, wideLen, guid_str.c_str(), _TRUNCATE);
+
+        g_guidExport(guid);
+        break;
+    }
+    default:
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
+}
 
 #pragma endregion

@@ -32,13 +32,18 @@ BuildGraph(T&& json_string) {
 
 // 콜백 함수 포인터 저장 변수
 CallbackFunc g_callback = nullptr;
-LPWSTR Pcontext = nullptr;
+GUIDExportFunc g_guidExport = nullptr;
+LPWSTR prevContext = nullptr;
 
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {
 		SetWindowText(win.hAnswer, L" ");
 		g_callback = callback;
+	}
+
+	__declspec(dllexport) void __stdcall RegisterGUIDExportFunc(GUIDExportFunc guidExport) {
+		g_guidExport = guidExport;
 	}
 
 	// export user question to extern process
@@ -49,7 +54,7 @@ extern "C" {
 	}
 
 	__declspec(dllexport) LPCWSTR ForwardPrevContext() {
-		return Pcontext;
+		return prevContext;
 	}
 
 	// get string from extern process
@@ -58,7 +63,8 @@ extern "C" {
 		SetWindowText(win.hAnswer, result);
 
 		try {
-			Pcontext = context;
+			prevContext = context;
+			MessageBox(win.m_hwnd, context, L"context", MB_OK);
 			std::string json = LpwstrToString(context);
 			BuildGraph(json);
 		}

@@ -8,6 +8,7 @@
 
 // 콜백 함수 타입 정의
 using CallbackFunc = void(__stdcall*)(void);
+using GUIDExportFunc = void(__stdcall*)(LPWSTR);
 
 std::string LpwstrToString(LPWSTR str);
 
@@ -18,6 +19,8 @@ BuildGraph(T&& json_string);
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback);
+
+	__declspec(dllexport) void __stdcall RegisterGUIDExportFunc(GUIDExportFunc guidExport);
 
 	// export user question to extern process
 	__declspec(dllexport) LPCWSTR ForwardQuestion();
