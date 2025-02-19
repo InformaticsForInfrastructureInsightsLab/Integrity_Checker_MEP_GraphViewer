@@ -72,7 +72,7 @@ extern "C" {
 			size_t conv_chars;
 			int len = (int)strlen(e.what()) + 1;
 			errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
-			SetWindowText(win.hAnswer, wcStr);
+			MessageBox(win.m_hwnd, wcStr, L"ERROR", MB_OK);
 
 			if (err != 0)
 				return;
