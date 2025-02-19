@@ -111,8 +111,6 @@ public:
         HWND hWndParent = 0,
         HMENU hMenu = 0
     );
-
-    bool RenderGraph(Graph&& graph);
 };
 
 extern PanelWindow panel;
@@ -123,4 +121,9 @@ public:
     CircleWindow() { }
 
     static LRESULT CALLBACK NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+};
+
+class LineWindow {
+public:
+    static LRESULT CALLBACK LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

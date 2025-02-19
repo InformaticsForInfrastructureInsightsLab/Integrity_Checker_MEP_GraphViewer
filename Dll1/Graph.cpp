@@ -14,10 +14,6 @@ Graph::Graph(nlohmann::json& json) {
 	}
 }
 
-Graph::~Graph() {
-	gvFreeLayout(gvc.get(), g.get());
-}
-
 void Graph::buildGraph() {
 	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context 생성
 	g = std::unique_ptr<Agraph_t, GraphDeleter>(agopen(const_cast<char*>("Neo4jGraph"), Agundirected, nullptr));
@@ -106,6 +102,17 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 		int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
 		int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
 		int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
+
+		if (x_s > x_e) {
+			int temp = x_s;
+			x_s = x_e;
+			x_e = temp;
+
+			temp = y_s;
+			y_s = y_e;
+			y_e = temp;
+		}
+
 		// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
 		int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
 		int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
@@ -115,6 +122,9 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 		std::string node_name_start = agnameof(start);
 		std::string node_name_end = agnameof(end);
 
+
+		// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
+		DrawLine(edge, x_s, y_s, x_e, y_e);
 		DrawNode(start ,x_s, y_s, r_xs, r_ys);
 		DrawNode(end, x_e, y_e, r_xe, r_ye);
 	}
@@ -132,9 +142,45 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 
 	// 노드 그리기
 	HWND hwnd = CreateWindowEx(0, L"NODECLASS", wGuid,
-		WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY,
+		WS_CHILD | WS_VISIBLE,
 		x - rx, y - ry, 2 * rx, 2 * ry,
-		panel.m_hwnd, (HMENU)0, GetModuleHandle(NULL), nullptr
+		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
 	);
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(node));
+}
+
+void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
+	int thickness = 5;
+
+	int anchor_x = x1 < x2 ? x1 : x2;
+	int anchor_y = y1 < y2 ? y1 : y2;
+	int len = abs(x2 - x1);
+	int height = abs(y2 - y1) > thickness ? abs(y2 - y1) : thickness;
+
+	HWND line = CreateWindowEx(
+		0,
+		L"LINECLASS", L"Line Window", WS_CHILD | WS_VISIBLE,
+		anchor_x, anchor_y, len, height, 
+		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);
+	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(edge));	
+
+	if (height > thickness)	{
+		POINT pt[4] = {
+			{x1,y1}, {x1,y1},
+			{x2,y2}, {x2, y2}
+		};
+		if (anchor_y == y1) {
+			pt[1].y += thickness;
+			pt[3].y -= thickness;
+		}
+		else {
+			pt[0].y -= thickness;
+			pt[2].y += thickness;
+		}
+		
+		// 회전된 사각형 형태의 Region을 생성하여 적용
+		HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
+		SetWindowRgn(line, hRgn, TRUE);
+		DeleteObject(hRgn);
+	}
 }

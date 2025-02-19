@@ -34,6 +34,7 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 
     GdiplusShutdown(gdiplusToken);
 
+
     return static_cast<int>(msg.wParam);
 }
 

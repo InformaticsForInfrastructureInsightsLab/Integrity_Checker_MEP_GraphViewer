@@ -64,7 +64,6 @@ extern "C" {
 
 		try {
 			prevContext = context;
-			MessageBox(win.m_hwnd, context, L"context", MB_OK);
 			std::string json = LpwstrToString(context);
 			BuildGraph(json);
 		}
@@ -78,19 +77,5 @@ extern "C" {
 			if (err != 0)
 				return;
 		}
-	}
-}
-
-namespace GraphUtils {
-	void GetIntersectionPoint(int x1, int y1, int x2, int y2, int r, int& ix, int& iy) {
-		double dx = x2 - x1;
-		double dy = y2 - y1;
-		double len = sqrt(dx * dx + dy * dy);
-		dx /= len;  // 방향 벡터의 단위화
-		dy /= len;
-
-		// 원의 중심에서 선을 따라 반지름만큼 이동하여 경계점 찾기
-		ix = x1 + int(dx * r);
-		iy = y1 + int(dy * r);
 	}
 }

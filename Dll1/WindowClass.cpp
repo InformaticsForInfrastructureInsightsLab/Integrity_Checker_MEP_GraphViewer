@@ -83,7 +83,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         DestroyWindow(m_hwnd);
         break;
     case WM_DESTROY:
-        UnregisterClass(L"MyWindowClass", GetModuleHandle(NULL));
+        UnregisterClass(ClassName(), GetModuleHandle(NULL));
         PostQuitMessage(0);
         break;
     default:
@@ -110,10 +110,19 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         wc.hInstance = GetModuleHandle(NULL);
         wc.lpszClassName = L"NODECLASS";
         RegisterClass(&wc);
-    }
-    break;
+
+        WNDCLASS wc_line = {};
+        wc_line.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+        wc_line.lpfnWndProc = LineWindow::LineProc;
+        wc_line.hInstance = GetModuleHandle(NULL);
+        wc_line.lpszClassName = L"LINECLASS";
+        RegisterClass(&wc_line);
+    } break;
     case WM_UPDATE_GRAPH: {
-        if (!graph) delete graph; //기존 그래프가 있다면 기존 그래프 메모리 할당 해제
+        if (graph) {
+            graph->Release();
+            delete graph;
+        }
         graph = reinterpret_cast<Graph*>(lParam);
         RECT wnd_sz = { 0,0,width, height };
         InvalidateRect(m_hwnd, &wnd_sz, true);
@@ -163,6 +172,13 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
     }
+    case WM_DESTROY:
+        graph->Release();
+        delete graph;
+        UnregisterClass(ClassName(), GetModuleHandle(NULL));
+        break;
+    default:
+        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }
     return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }
@@ -177,7 +193,7 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = ClassName();
-    wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc.hbrBackground = (HBRUSH)(BLACK_BRUSH + 1);
     RegisterClass(&wc);
 
     RECT size = { x,y,nWidth,nHeight };
@@ -241,8 +257,8 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         TextOutA(hdc, text_x, text_y, name.c_str(), name.length());
 
         EndPaint(hwnd, &ps);
+        break;
     }
-    break;
     case WM_LBUTTONDOWN: {
         Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
         std::string guid_str = agget(node, const_cast<char*>("guid"));
@@ -251,7 +267,40 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         LPWSTR guid = new WCHAR[wideLen];
         mbstowcs_s(&wideLen, guid, wideLen, guid_str.c_str(), _TRUNCATE);
 
-        g_guidExport(guid);
+        g_guidExport(guid, guid);
+        break;
+    }
+    default:
+        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
+}
+
+#pragma endregion
+
+#pragma region LineWindow
+
+LRESULT CALLBACK LineWindow::LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg)
+    {
+    case WM_LBUTTONDOWN: {
+        Agedge_t* edge = reinterpret_cast<Agedge_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        Agnode_t* start = aghead(edge);
+        Agnode_t* end = agtail(edge);
+
+        std::string start_guid_str = agget(start, const_cast<char*>("guid"));
+        size_t wideLen = 0;
+        mbstowcs_s(&wideLen, nullptr, 0, start_guid_str.c_str(), _TRUNCATE);
+        LPWSTR start_guid = new WCHAR[wideLen];
+        mbstowcs_s(&wideLen, start_guid, wideLen, start_guid_str.c_str(), _TRUNCATE);
+
+        std::string end_guid_str = agget(end, const_cast<char*>("guid"));
+        wideLen = 0;
+        mbstowcs_s(&wideLen, nullptr, 0, end_guid_str.c_str(), _TRUNCATE);
+        LPWSTR end_guid = new WCHAR[wideLen];
+        mbstowcs_s(&wideLen, end_guid, wideLen, end_guid_str.c_str(), _TRUNCATE);
+
+        g_guidExport(start_guid, end_guid);
         break;
     }
     default:
