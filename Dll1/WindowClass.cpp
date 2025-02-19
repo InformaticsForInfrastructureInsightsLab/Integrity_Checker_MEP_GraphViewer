@@ -173,8 +173,10 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     case WM_DESTROY:
-        graph->Release();
-        delete graph;
+        if (graph) {
+            graph->Release();
+            delete graph;
+        }
         UnregisterClass(ClassName(), GetModuleHandle(NULL));
         break;
     default:
