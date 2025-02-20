@@ -176,6 +176,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         if (graph) {
             graph->Release();
             delete graph;
+            graph = nullptr;
         }
         UnregisterClass(ClassName(), GetModuleHandle(NULL));
         break;

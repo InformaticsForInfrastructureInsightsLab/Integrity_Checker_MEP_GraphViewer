@@ -4,7 +4,6 @@
 #include "utils.hpp"
 
 MainWindow win;
-CircleWindow c1, c2;
 PanelWindow panel;
 HINSTANCE hInstance;
 
@@ -25,7 +24,6 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
 
     return static_cast<int>(msg.wParam);
 }
