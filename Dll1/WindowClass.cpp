@@ -37,6 +37,9 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
+    static bool isDragging = false;
+    static POINT ptLastMousePos;
+
     switch (uMsg) {
     case WM_CREATE:
         // 입력 칸 (Edit Control) 생성
@@ -79,6 +82,45 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_callback();
         }
         break;
+    case WM_LBUTTONDOWN:
+    {
+        POINT pt = { LOWORD(lParam), HIWORD(lParam) };
+        HWND hwndClicked = ChildWindowFromPoint(m_hwnd, pt);
+
+        if (hwndClicked == panel.m_hwnd) {
+            // 클릭한 위치를 화면 좌표로 저장
+            ClientToScreen(m_hwnd, &pt);
+            ptLastMousePos = pt;
+            isDragging = true;
+            SetCapture(m_hwnd); // 마우스 입력 캡처 시작
+        }
+    }
+    break;
+    case WM_MOUSEMOVE:
+        if (isDragging)
+        {
+            POINT pt = { LOWORD(lParam), HIWORD(lParam) };
+            ClientToScreen(m_hwnd, &pt);
+
+            int dx = pt.x - ptLastMousePos.x;
+            int dy = pt.y - ptLastMousePos.y;
+
+            panel.offsetX += dx;
+            panel.offsetY += dy;
+
+            RECT panel_size = { 0,0, panel.width, panel.height };
+            InvalidateRect(panel.m_hwnd, &panel_size, true);
+
+            // 마우스 위치 업데이트
+            ptLastMousePos = pt;
+        }
+        break;
+    case WM_LBUTTONUP:
+        if (isDragging) {
+            isDragging = false;
+            ReleaseCapture(); // 마우스 입력 캡처 종료
+        }
+        break;
     case WM_CLOSE:
         DestroyWindow(m_hwnd);
         break;
@@ -98,8 +140,6 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 extern MainWindow win;
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 0.7f;
-    static float offsetX = 0, offsetY = 0;
-
     static Graph* graph = nullptr;
 
     switch (uMsg) {
@@ -230,6 +270,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         int radY = (client.bottom - client.top) / 2;
         HRGN hRgn = CreateEllipticRgn(centX - radX, centY - radY, centX + radX, centY + radY);
         SetWindowRgn(hwnd, hRgn, TRUE);
+        DeleteObject(hRgn);
         break;
     }
     case WM_PAINT:

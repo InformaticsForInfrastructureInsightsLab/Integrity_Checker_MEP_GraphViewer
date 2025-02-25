@@ -72,9 +72,9 @@ protected:
 class PanelWindow : public BaseWindow<PanelWindow> {
 public:
     int width, height;
-   
+    float offsetX, offsetY;
 public:
-    PanelWindow() { }
+    PanelWindow() : offsetX(0), offsetY(0) { }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     PCWSTR ClassName() const { return L"CustomPanel"; }
