@@ -221,6 +221,17 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg)
     {
+    case WM_CREATE: {
+        RECT client;
+        GetClientRect(hwnd, &client);
+        int centX = (client.right + client.left) / 2;
+        int centY = (client.bottom + client.top) / 2;
+        int radX = (client.right - client.left) / 2;
+        int radY = (client.bottom - client.top) / 2;
+        HRGN hRgn = CreateEllipticRgn(centX - radX, centY - radY, centX + radX, centY + radY);
+        SetWindowRgn(hwnd, hRgn, TRUE);
+        break;
+    }
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
@@ -242,7 +253,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
         std::string name = agnameof(node);
 
-        int fontSize = static_cast<int>(radX * 0.5);
+        int fontSize = static_cast<int>(min(radX*0.5, radY) * 0.5);
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(0, 0, 0));
 

@@ -1,7 +1,17 @@
+#include <unordered_set>
+
 #include "Graph.hpp"
 #include "utils.hpp"
 #include "WindowClass.hpp"
 extern PanelWindow panel;
+
+namespace detail {
+	struct EdgeHash {
+		size_t operator()(const std::pair<Agnode_t*, Agnode_t*>& edge) const {
+			return std::hash<void*>()(edge.first) ^ std::hash<void*>()(edge.second);
+		}
+	};
+}
 
 Graph::Graph(nlohmann::json& json) {
 	for (auto& clash : json) {
@@ -79,55 +89,70 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 	float width = x_max - x_min;
 	float height = y_max - y_min;
 
-	Agnode_t* sample_node = agfstnode(g.get());
+	std::unordered_set<std::pair<Agnode_t*, Agnode_t*>, detail::EdgeHash> visitedEdges;
+	std::unordered_set<Agnode_t*> visitedNodes;
 
-	for (Agedge_t* edge = agfstedge(g.get(), sample_node); edge; edge = agnxtedge(g.get(), edge, sample_node)) {
-		Agnode_t* start = FindNode(agget(edge, const_cast<char*>("start_node")));
-		Agnode_t* end = FindNode(agget(edge, const_cast<char*>("end_node")));
+	for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
+		for (Agedge_t* edge = agfstedge(g.get(), node); edge; edge = agnxtedge(g.get(), edge, node)) {
+			Agnode_t* start = aghead(edge);
+			Agnode_t* end = agtail(edge);
+			std::pair<Agnode_t*, Agnode_t*> edgeKey = { min(start, end), max(start, end) };
 
-		if (!start) {
-			MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
+			if (visitedEdges.find(edgeKey) != visitedEdges.end()) {
+				continue;
+			}
+			visitedEdges.insert(edgeKey);
+
+			if (!start) {
+				MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
+			}
+			if (!end) {
+				MessageBox(panel.m_hwnd, L"end is null", L" ", MB_OK);
+			}
+
+			pointf coord_s = ND_coord(start);
+			pointf coord_e = ND_coord(end);
+			double rad_s = max(ND_width(start), ND_height(start));
+			double rad_e = max(ND_width(end), ND_height(end));
+
+			// 중점의 x,y좌표
+			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
+			int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
+			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
+			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
+
+			if (x_s > x_e) {
+				int temp = x_s;
+				x_s = x_e;
+				x_e = temp;
+
+				temp = y_s;
+				y_s = y_e;
+				y_e = temp;
+			}
+
+			// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
+			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
+			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
+			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
+			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
+
+			std::string node_name_start = agnameof(start);
+			std::string node_name_end = agnameof(end);
+
+
+			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
+			DrawLine(edge, x_s, y_s, x_e, y_e);
+			if (visitedNodes.find(start) == visitedNodes.end()) {
+				DrawNode(start, x_s, y_s, r_xs, r_ys);
+				visitedNodes.insert(start);
+			}
+			if (visitedNodes.find(end) == visitedNodes.end()) {
+				DrawNode(end, x_e, y_e, r_xe, r_ye);
+				visitedNodes.insert(end);
+			}
 		}
-		if (!end) {
-			MessageBox(panel.m_hwnd, L"end is null", L" ", MB_OK);
-		}
-
-		pointf coord_s = ND_coord(start);
-		pointf coord_e = ND_coord(end);
-		double rad_s = max(ND_width(start), ND_height(start));
-		double rad_e = max(ND_width(end), ND_height(end));
-		
-		// 중점의 x,y좌표
-		int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
-		int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
-		int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
-		int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
-
-		if (x_s > x_e) {
-			int temp = x_s;
-			x_s = x_e;
-			x_e = temp;
-
-			temp = y_s;
-			y_s = y_e;
-			y_e = temp;
-		}
-
-		// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
-		int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
-		int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
-		int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
-		int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
-		
-		std::string node_name_start = agnameof(start);
-		std::string node_name_end = agnameof(end);
-
-
-		// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
-		DrawLine(edge, x_s, y_s, x_e, y_e);
-		DrawNode(start ,x_s, y_s, r_xs, r_ys);
-		DrawNode(end, x_e, y_e, r_xe, r_ye);
-	}
+	}	
 }
 
 void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
