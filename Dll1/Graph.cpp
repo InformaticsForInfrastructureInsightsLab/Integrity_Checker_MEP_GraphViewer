@@ -189,23 +189,38 @@ void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);
 	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(edge));	
 
-	if (height > thickness)	{
-		POINT pt[4] = {
-			{x1,y1}, {x1,y1},
-			{x2,y2}, {x2, y2}
-		};
-		if (anchor_y == y1) {
-			pt[1].y += thickness;
-			pt[3].y -= thickness;
-		}
-		else {
-			pt[0].y -= thickness;
-			pt[2].y += thickness;
-		}
-		
-		// 회전된 사각형 형태의 Region을 생성하여 적용
-		HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
-		SetWindowRgn(line, hRgn, TRUE);
-		DeleteObject(hRgn);
+	RECT client;
+	GetClientRect(line, &client);
+
+	POINT pt[4];
+
+	//(x1,y1)을 원점으로 (x2,y2)는 몇사분면에 있는지에 따라 클라이언트 영역을 잘라줄거임
+	// 윈도우의 좌표는 밑으로 갈수록 증가하고 오른쪽으로 갈수록 증가함에 주의
+	if (x1 < x2 && y1 > y2) {
+		pt[0].x = client.right;  pt[0].y = client.top;
+		pt[1].x = client.right;  pt[1].y = client.top + thickness;
+		pt[2].x = client.left;   pt[2].y = client.bottom;
+		pt[3].x = client.left;   pt[3].y = client.bottom - thickness;
 	}
+	else if (x1 > x2 && y1 > y2) {
+		pt[0].x = client.left;  pt[0].y = client.top;
+		pt[1].x = client.left;  pt[1].y = client.top + thickness;
+		pt[2].x = client.right;   pt[2].y = client.bottom;
+		pt[3].x = client.right;   pt[3].y = client.bottom - thickness;
+	}
+	else if (x1 > x2 && y1 < y2) {
+		pt[0].x = client.left;  pt[0].y = client.bottom;
+		pt[1].x = client.left;  pt[1].y = client.bottom - thickness;
+		pt[2].x = client.right;   pt[2].y = client.top;
+		pt[3].x = client.right;   pt[3].y = client.top + thickness;
+	}
+	else {
+		pt[0].x = client.left;  pt[0].y = client.top;
+		pt[1].x = client.left;  pt[1].y = client.top + thickness;
+		pt[2].x = client.right;   pt[2].y = client.bottom;
+		pt[3].x = client.right;   pt[3].y = client.bottom - thickness;
+	}
+	HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
+	SetWindowRgn(line, hRgn, TRUE);
+	DeleteObject(hRgn);
 }
