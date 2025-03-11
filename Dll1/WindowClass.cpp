@@ -255,6 +255,42 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 }
 #pragma endregion
 
+#pragma region ContextWindow
+
+LRESULT ContextWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+}
+
+BOOL ContextWindow::Create(PCWSTR lpWindowName,
+    DWORD dwStyle, DWORD dwExStyle = 0,
+    int x, int y, int nWidth, int nHeight,
+    HWND hWndParent = 0,
+    HMENU hMenu = 0
+) {
+    WNDCLASS wc = { 0 };
+
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = ClassName();
+    wc.hbrBackground = (HBRUSH)(BLACK_BRUSH + 1);
+    RegisterClass(&wc);
+
+    RECT size = { x,y,nWidth,nHeight };
+    AdjustWindowRect(&size, dwStyle, FALSE);
+
+    int width = size.right - size.left;
+    int height = size.bottom - size.top;
+
+    m_hwnd = CreateWindow(
+        ClassName(), lpWindowName, dwStyle,
+        x, y, width, height,
+        hWndParent, hMenu, GetModuleHandle(NULL), this
+    );
+
+    return (m_hwnd ? TRUE : FALSE);
+}
+
+#pragma endregion
 
 #pragma region CircleWindow
 
