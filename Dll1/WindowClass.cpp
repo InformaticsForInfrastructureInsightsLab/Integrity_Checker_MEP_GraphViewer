@@ -23,7 +23,7 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
     wc.lpszClassName = ClassName();
     RegisterClass(&wc);
 
-    RECT size = { 0, 0, 950, 600 };
+    RECT size = { 0, 0, nWidth, nHeight };
     AdjustWindowRect(&size, dwStyle, FALSE);
 
     m_hwnd = CreateWindow(
@@ -72,7 +72,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY, 0,
-            0, 0, 950, 340, m_hwnd, (HMENU)3001)) {
+            0, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
         break;

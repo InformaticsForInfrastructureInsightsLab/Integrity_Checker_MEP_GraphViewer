@@ -112,8 +112,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 			pointf coord_s = ND_coord(start);
 			pointf coord_e = ND_coord(end);
-			double rad_s = max(ND_width(start), ND_height(start));
-			double rad_e = max(ND_width(end), ND_height(end));
 
 			// 중점의 x,y좌표
 			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);

@@ -59,7 +59,7 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-		// GPT답변창의 텍스트 변경
+	 	// GPT답변창의 텍스트 변경
 		SetWindowText(win.hAnswer, result);
 
 		try {
