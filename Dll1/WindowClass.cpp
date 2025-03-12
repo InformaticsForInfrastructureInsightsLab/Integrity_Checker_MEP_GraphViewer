@@ -171,8 +171,22 @@ void MainWindow::CreateColumn() {
     ListView_InsertColumn(hListView, 12, &lvc);
 }
 
-void MainWindow::FillItems(std::string& context) {
+void MainWindow::AddItems(nlohmann::json& context) {
+    LVITEM lvi;
+    lvi.mask = LVIF_TEXT;
+    lvi.iItem = 0;
+    lvi.iSubItem = 0;
+    lvi.pszText = const_cast<LPWSTR>(L"1");
+    ListView_InsertItem(hListView, &lvi);
 
+    std::string guid1 = context["m"]["properties"]["GUID"];
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, guid1.c_str(), -1, NULL, 0);
+    LPWSTR lpwstr = new wchar_t[size_needed]; // 동적 할당
+    MultiByteToWideChar(CP_UTF8, 0, guid1.c_str(), -1, lpwstr, size_needed);
+
+    lvi.iSubItem = 1;
+    lvi.pszText = lpwstr;
+    ListView_SetItem(hListView, &lvi);
 }
 
 #pragma endregion
