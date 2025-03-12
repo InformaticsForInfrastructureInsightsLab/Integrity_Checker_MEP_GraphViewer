@@ -1,7 +1,8 @@
 #include "framework.h"
 #include "WindowClass.hpp" 
+#include <commctrl.h>
 
-using namespace Gdiplus;
+#pragma comment(lib, "comctl32.lib")
 
 #include "utils.hpp"
 extern CallbackFunc g_callback;
@@ -69,6 +70,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             m_hwnd, (HMENU)1002,
             GetModuleHandle(NULL), nullptr);
 
+        hListView = CreateWindowEx(
+            WS_EX_CLIENTEDGE, WC_LISTVIEW, L" ",
+            WS_CHILD | WS_VISIBLE | LVS_REPORT,
+            645, 0, 300, 340, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+        CreateColumn();
+
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY, 0,
@@ -76,49 +83,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
         break;
-
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
-        }
-        break;
-    case WM_LBUTTONDOWN:
-    {
-        POINT pt = { LOWORD(lParam), HIWORD(lParam) };
-        HWND hwndClicked = ChildWindowFromPoint(m_hwnd, pt);
-
-        if (hwndClicked == panel.m_hwnd) {
-            // 클릭한 위치를 화면 좌표로 저장
-            ClientToScreen(m_hwnd, &pt);
-            ptLastMousePos = pt;
-            isDragging = true;
-            SetCapture(m_hwnd); // 마우스 입력 캡처 시작
-        }
-    }
-    break;
-    case WM_MOUSEMOVE:
-        if (isDragging)
-        {
-            POINT pt = { LOWORD(lParam), HIWORD(lParam) };
-            ClientToScreen(m_hwnd, &pt);
-
-            int dx = pt.x - ptLastMousePos.x;
-            int dy = pt.y - ptLastMousePos.y;
-
-            panel.offsetX += dx;
-            panel.offsetY += dy;
-
-            RECT panel_size = { 0,0, panel.width, panel.height };
-            InvalidateRect(panel.m_hwnd, &panel_size, true);
-
-            // 마우스 위치 업데이트
-            ptLastMousePos = pt;
-        }
-        break;
-    case WM_LBUTTONUP:
-        if (isDragging) {
-            isDragging = false;
-            ReleaseCapture(); // 마우스 입력 캡처 종료
         }
         break;
     case WM_CLOSE:
@@ -133,6 +100,81 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
     return 0;
 }
+
+void MainWindow::CreateColumn() {
+    LVCOLUMN lvc;
+    lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+
+    lvc.pszText = const_cast<LPWSTR>(L"GUID1");
+    lvc.cx = 50;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 0, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"GUID2");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 1, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"Clash Type");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 2, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"topology(x+y+z)");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 3, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"hard clash type");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 4, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"soft clash type");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 5, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"adjusted severity");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 6, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"severity");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 7, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"Clearance");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 8, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"offset");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 9, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"penetrability");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 10, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"ABS_Volume_Diff");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 11, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"ABS_Volume_Sum");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 12, &lvc);
+}
+
+void MainWindow::FillItems(std::string& context) {
+
+}
+
 #pragma endregion
 
 
@@ -253,43 +295,6 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 
     return (m_hwnd ? TRUE : FALSE);
 }
-#pragma endregion
-
-#pragma region ContextWindow
-
-LRESULT ContextWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
-}
-
-BOOL ContextWindow::Create(PCWSTR lpWindowName,
-    DWORD dwStyle, DWORD dwExStyle = 0,
-    int x, int y, int nWidth, int nHeight,
-    HWND hWndParent = 0,
-    HMENU hMenu = 0
-) {
-    WNDCLASS wc = { 0 };
-
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = ClassName();
-    wc.hbrBackground = (HBRUSH)(BLACK_BRUSH + 1);
-    RegisterClass(&wc);
-
-    RECT size = { x,y,nWidth,nHeight };
-    AdjustWindowRect(&size, dwStyle, FALSE);
-
-    int width = size.right - size.left;
-    int height = size.bottom - size.top;
-
-    m_hwnd = CreateWindow(
-        ClassName(), lpWindowName, dwStyle,
-        x, y, width, height,
-        hWndParent, hMenu, GetModuleHandle(NULL), this
-    );
-
-    return (m_hwnd ? TRUE : FALSE);
-}
-
 #pragma endregion
 
 #pragma region CircleWindow
