@@ -115,7 +115,7 @@ public:
     );
 
     void CreateColumn();
-    void AddItems(nlohmann::json& context);
+    void AddItems(nlohmann::json context);
 };
 
 extern PanelWindow panel;

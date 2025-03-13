@@ -13,7 +13,7 @@ namespace detail {
 	};
 }
 
-Graph::Graph(nlohmann::json& json) {
+Graph::Graph(nlohmann::json json) {
 	for (auto& clash : json) {
 		node_map[clash["m"]["properties"]["GUID"]] = std::make_unique<node>(clash["m"]["properties"]);
 		node_map[clash["n"]["properties"]["GUID"]] = std::make_unique<node>(clash["n"]["properties"]);

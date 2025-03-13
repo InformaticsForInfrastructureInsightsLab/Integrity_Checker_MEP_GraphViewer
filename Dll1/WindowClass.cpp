@@ -169,24 +169,79 @@ void MainWindow::CreateColumn() {
     lvc.cx = 150;
     lvc.iSubItem = 0;
     ListView_InsertColumn(hListView, 12, &lvc);
+
+    lvc.pszText = const_cast<LPWSTR>(L"Clash Volume");
+    lvc.cx = 150;
+    lvc.iSubItem = 0;
+    ListView_InsertColumn(hListView, 12, &lvc);
 }
 
-void MainWindow::AddItems(nlohmann::json& context) {
-    LVITEM lvi;
-    lvi.mask = LVIF_TEXT;
-    lvi.iItem = 0;
-    lvi.iSubItem = 0;
-    lvi.pszText = const_cast<LPWSTR>(L"1");
-    ListView_InsertItem(hListView, &lvi);
+void MainWindow::AddItems(nlohmann::json context) {
+    for (auto clash : context) {
+        LVITEM lvi;
+        lvi.mask = LVIF_TEXT;
+        lvi.iItem = 0;
+        lvi.iSubItem = 0;
+        lvi.pszText = StringToLpwstr(clash["m"]["properties"]["GUID"]);
+        ListView_InsertItem(hListView, &lvi);
 
-    std::string guid1 = context["m"]["properties"]["GUID"];
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, guid1.c_str(), -1, NULL, 0);
-    LPWSTR lpwstr = new wchar_t[size_needed]; // 동적 할당
-    MultiByteToWideChar(CP_UTF8, 0, guid1.c_str(), -1, lpwstr, size_needed);
+        lvi.iSubItem = 1;
+        lvi.pszText = StringToLpwstr(clash["n"]["properties"]["GUID"]);
+        ListView_SetItem(hListView, &lvi);
 
-    lvi.iSubItem = 1;
-    lvi.pszText = lpwstr;
-    ListView_SetItem(hListView, &lvi);
+        lvi.iSubItem = 2;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["HardClash"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 3;
+        std::string topology = std::string(clash["r"]["properties"]["TopologyXaxis"]) + ","
+            + std::string(clash["r"]["properties"]["TopologyYaxis"]) + ","
+            + std::string(clash["r"]["properties"]["TopologyZaxis"]);
+        lvi.pszText = StringToLpwstr(topology);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 4;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["ClashType"]);
+        ListView_SetItem(hListView, &lvi);
+
+        if (clash["r"]["properties"]["HardClash"] == "False") {
+            lvi.iSubItem = 5;
+            lvi.pszText = StringToLpwstr(clash["r"]["properties"]["SoftClash"]);
+            ListView_SetItem(hListView, &lvi);
+        }
+
+        lvi.iSubItem = 6;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Severity_Prediction"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 7;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Severity"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 8;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Clearance"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 9;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Offset"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 10;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Penetration"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 11;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["ABS_Volume_Diff"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 12;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["ABS_Volume_Sum"]);
+        ListView_SetItem(hListView, &lvi);
+
+        lvi.iSubItem = 13;
+        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Clash_Volume"]);
+        ListView_SetItem(hListView, &lvi);
+    }
 }
 
 #pragma endregion

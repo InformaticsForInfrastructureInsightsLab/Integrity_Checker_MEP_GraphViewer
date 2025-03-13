@@ -11,6 +11,7 @@ using CallbackFunc = void(__stdcall*)(void);
 using GUIDExportFunc = void(__stdcall*)(LPWSTR, LPWSTR);
 
 std::string LpwstrToString(LPWSTR str);
+LPWSTR StringToLpwstr(std::string str);
 
 template<typename T>
 typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>, void>

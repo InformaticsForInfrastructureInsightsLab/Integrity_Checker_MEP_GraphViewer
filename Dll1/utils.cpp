@@ -16,6 +16,13 @@ std::string LpwstrToString(LPWSTR str) {
 	return std_str;
 }
 
+LPWSTR StringToLpwstr(std::string str) {
+	int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
+	LPWSTR lpwstr = new wchar_t[size_needed];
+	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, lpwstr, size_needed);
+	return lpwstr;
+}
+
 template<typename T>
 typename std::enable_if_t<std::is_same_v<std::decay_t<T>, std::string>, void>
 BuildGraph(T&& json_string) {
@@ -25,11 +32,11 @@ BuildGraph(T&& json_string) {
 	graph->buildGraph();
 	graph->exportGraphImage();
 
-	win.AddItems(json);
-
 	//image = new Image(L"C:/objectinfo/gpt_visualize.png");
 	RECT client_rect = { 0,0,950,340 };
 	PostMessage(panel.m_hwnd, WM_UPDATE_GRAPH, NULL, reinterpret_cast<LPARAM>(graph));
+
+	win.AddItems(json);
 }
 
 // 콜백 함수 포인터 저장 변수

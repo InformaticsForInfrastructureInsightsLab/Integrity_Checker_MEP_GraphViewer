@@ -100,7 +100,7 @@ class Graph {
 	std::unique_ptr<Agraph_t, GraphDeleter> g;
 
 public:
-	Graph(nlohmann::json& json);
+	Graph(nlohmann::json json);
 
 	void buildGraph();
 	void exportGraphImage();
