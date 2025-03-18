@@ -47,7 +47,6 @@ LPWSTR prevContext = nullptr;
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {
-		SetWindowText(win.hAnswer, L" ");
 		g_callback = callback;
 	}
 
@@ -59,6 +58,9 @@ extern "C" {
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
 		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
+		std::string my_chat = "[나]: " + LpwstrToString(text);
+		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)StringToLpwstr(my_chat));
+		SetWindowText(win.hEdit, L" ");
 		return text;
 	}
 
@@ -69,7 +71,7 @@ extern "C" {
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
 	 	// GPT답변창의 텍스트 변경
-		SetWindowText(win.hAnswer, result);
+		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)result);
 
 		try {
 			prevContext = context;

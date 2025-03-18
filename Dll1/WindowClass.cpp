@@ -63,9 +63,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 모델 답변
         hAnswer = CreateWindowEx(
             WS_EX_CLIENTEDGE,
-            L"EDIT",
-            L"LLM의 답변이 여기에 표시됩니다",
-            WS_CHILD | WS_VISIBLE | WS_VSCROLL | ES_LEFT | ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY,
+            L"LISTBOX",
+            L" ",
+            WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL | LVS_REPORT,
             10, 350, 930, 140,
             m_hwnd, (HMENU)1002,
             GetModuleHandle(NULL), nullptr);
