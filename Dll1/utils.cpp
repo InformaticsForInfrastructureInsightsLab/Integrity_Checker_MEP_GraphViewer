@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include "Chat.h"
 
 #include <memory>
 
@@ -44,6 +45,8 @@ CallbackFunc g_callback = nullptr;
 GUIDExportFunc g_guidExport = nullptr;
 LPWSTR prevContext = nullptr;
 
+std::vector<ChatMessage> messages;
+
 extern "C" {
 	// 콜백 등록 함수
 	__declspec(dllexport) void __stdcall RegisterCallback(CallbackFunc callback) {
@@ -58,8 +61,10 @@ extern "C" {
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
 		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
-		std::string my_chat = "[나]: " + LpwstrToString(text);
+		std::string my_chat = "[나]: " + LpwstrToString(text) + "\r\n";
+		messages.push_back({ my_chat, true });
 		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)StringToLpwstr(my_chat));
+		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
 		SetWindowText(win.hEdit, L" ");
 		return text;
 	}
@@ -70,8 +75,9 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-	 	// GPT답변창의 텍스트 변경
+		messages.push_back({ LpwstrToString(result), false });
 		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)result);
+		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
 
 		try {
 			prevContext = context;

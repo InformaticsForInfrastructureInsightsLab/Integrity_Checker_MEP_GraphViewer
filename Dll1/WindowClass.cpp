@@ -1,6 +1,7 @@
 #include "framework.h"
 #include "WindowClass.hpp" 
 #include <commctrl.h>
+#include "Chat.h"
 
 #pragma comment(lib, "comctl32.lib")
 
@@ -10,6 +11,8 @@ extern GUIDExportFunc g_guidExport;
 
 extern MainWindow win;
 extern PanelWindow panel;
+
+extern std::vector<ChatMessage> messages;
 
 #pragma region MainWindow
 BOOL MainWindow::Create(PCWSTR lpWindowName,
@@ -60,12 +63,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
 
-        // 모델 답변
+        // 채팅 폼
         hAnswer = CreateWindowEx(
             WS_EX_CLIENTEDGE,
             L"LISTBOX",
             L" ",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | WS_VSCROLL | LVS_REPORT,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | WS_VSCROLL,
             10, 350, 930, 140,
             m_hwnd, (HMENU)1002,
             GetModuleHandle(NULL), nullptr);
@@ -81,6 +84,49 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY, 0,
             0, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
+        }
+        break;
+    case WM_MEASUREITEM:
+        if (wParam == 1002) {
+            LPMEASUREITEMSTRUCT pMIS = (LPMEASUREITEMSTRUCT)lParam;
+            if (pMIS->itemID < messages.size()) {
+                HDC hdc = GetDC(m_hwnd);
+                RECT rc = { 0, 0, 300, 0 };  // 최대 가로 폭 300px
+                DrawText(hdc, StringToLpwstr(messages[pMIS->itemID].text), -1, &rc, DT_CALCRECT | DT_WORDBREAK);
+                ReleaseDC(m_hwnd, hdc);
+
+                pMIS->itemHeight = rc.bottom - rc.top + 10;  // 여백 추가
+            }
+        }
+        break;
+    case WM_DRAWITEM:
+        if (wParam == 1002) {
+            
+            LPDRAWITEMSTRUCT pDIS = (LPDRAWITEMSTRUCT)lParam;
+            if (pDIS->itemID < messages.size()) {
+                ChatMessage msg = messages[pDIS->itemID];
+
+                // 배경 색상 설정
+                SetBkMode(pDIS->hDC, TRANSPARENT);
+                if (msg.isMyMessage) {
+                    SetTextColor(pDIS->hDC, RGB(0, 0, 255));  // 내 메시지 (파란색)
+                }
+                else {
+                    SetTextColor(pDIS->hDC, RGB(255, 0, 0));  // 상대 메시지 (빨간색)
+                }
+
+                RECT rect = pDIS->rcItem;
+                if (msg.isMyMessage) {
+                    // 내 메시지는 왼쪽 정렬
+                    rect.left += 10;
+                }
+                else {
+                    // 상대 메시지는 오른쪽 정렬
+                    rect.left = rect.right - 500;
+                }
+                
+                DrawText(pDIS->hDC, StringToLpwstr(msg.text.c_str()), -1, &rect, DT_LEFT | DT_WORDBREAK);
+            }
         }
         break;
     case WM_COMMAND:
