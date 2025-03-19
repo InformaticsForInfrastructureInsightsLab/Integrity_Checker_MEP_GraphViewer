@@ -106,26 +106,41 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             if (pDIS->itemID < messages.size()) {
                 ChatMessage msg = messages[pDIS->itemID];
 
-                // 배경 색상 설정
-                SetBkMode(pDIS->hDC, TRANSPARENT);
-                if (msg.isMyMessage) {
-                    SetTextColor(pDIS->hDC, RGB(0, 0, 255));  // 내 메시지 (파란색)
-                }
-                else {
-                    SetTextColor(pDIS->hDC, RGB(255, 0, 0));  // 상대 메시지 (빨간색)
-                }
+                HDC hdc = pDIS->hDC;
+                RECT textRect = { 0, 0, 500, 0 }; // 최대 너비 200px
+                DrawText(hdc, StringToLpwstr(msg.text), -1, &textRect, DT_CALCRECT | DT_WORDBREAK);
 
-                RECT rect = pDIS->rcItem;
+                int bubbleWidth = textRect.right - textRect.left + 20; // 여백 포함
+                int bubbleHeight = textRect.bottom - textRect.top + 10;
+
+                RECT bubbleRect = pDIS->rcItem;
                 if (msg.isMyMessage) {
-                    // 내 메시지는 왼쪽 정렬
-                    rect.left += 10;
+                    bubbleRect.left = pDIS->rcItem.right - bubbleWidth - 10;
+                    bubbleRect.right = pDIS->rcItem.right - 10;
                 }
                 else {
-                    // 상대 메시지는 오른쪽 정렬
-                    rect.left = rect.right - 500;
+                    bubbleRect.left = pDIS->rcItem.left + 10;
+                    bubbleRect.right = pDIS->rcItem.left + bubbleWidth + 10;
                 }
-                
-                DrawText(pDIS->hDC, StringToLpwstr(msg.text.c_str()), -1, &rect, DT_LEFT | DT_WORDBREAK);
+                bubbleRect.top += 5;
+                bubbleRect.bottom = bubbleRect.top + bubbleHeight;
+
+                // 말풍선 배경
+                HBRUSH hBrush = CreateSolidBrush(msg.isMyMessage ? RGB(173, 216, 230) : RGB(220, 220, 220));
+                FillRect(hdc, &bubbleRect, hBrush);
+                DeleteObject(hBrush);
+
+                // 테두리
+                FrameRect(hdc, &bubbleRect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+
+                // 텍스트 출력
+                textRect.left = bubbleRect.left + 10;
+                textRect.right = bubbleRect.right - 10;
+                textRect.top = bubbleRect.top + 5;
+                textRect.bottom = bubbleRect.bottom - 5;
+
+                SetBkMode(hdc, TRANSPARENT);
+                DrawText(hdc, StringToLpwstr(msg.text), -1, &textRect, DT_WORDBREAK);
             }
         }
         break;

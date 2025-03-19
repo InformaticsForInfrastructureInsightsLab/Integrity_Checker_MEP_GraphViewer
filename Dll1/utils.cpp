@@ -61,7 +61,7 @@ extern "C" {
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
 		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
-		std::string my_chat = "[³ª]: " + LpwstrToString(text) + "\r\n";
+		std::string my_chat = LpwstrToString(text);
 		messages.push_back({ my_chat, true });
 		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)StringToLpwstr(my_chat));
 		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
