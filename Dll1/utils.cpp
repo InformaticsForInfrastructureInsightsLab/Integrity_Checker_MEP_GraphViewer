@@ -5,6 +5,7 @@
 
 extern MainWindow win;
 extern PanelWindow panel;
+extern ChatPanelWindow chatPanel;
 
 std::string LpwstrToString(LPWSTR str) {
 	// 변환에 필요한 버퍼 크기 계산
@@ -45,7 +46,24 @@ CallbackFunc g_callback = nullptr;
 GUIDExportFunc g_guidExport = nullptr;
 LPWSTR prevContext = nullptr;
 
-std::vector<ChatMessage> messages;
+std::vector<std::wstring> messages;
+extern int totalHeight;
+extern int scrollPos;
+
+// 채팅 메시지를 패널에 추가
+void AddChatMessage(const std::wstring& message) {
+	int messageHeight = 40; // 말풍선 높이
+
+	messages.push_back(message);
+	totalHeight += messageHeight + 10;
+
+	// 스크롤바 업데이트
+	SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE, 0, totalHeight - 400, 400, scrollPos, 0 };
+	SetScrollInfo(win.hScroll, SB_CTL, &si, TRUE);
+
+	// 패널 다시 그리기
+	InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
+}
 
 extern "C" {
 	// 콜백 등록 함수
@@ -61,9 +79,8 @@ extern "C" {
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
 		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
-		std::string my_chat = LpwstrToString(text);
-		messages.push_back({ my_chat, true });
 
+		AddChatMessage(text);
 
 		SetWindowText(win.hEdit, L" ");
 		return text;
@@ -75,8 +92,7 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-		messages.push_back({ LpwstrToString(result), false });
-
+		AddChatMessage(result);
 		try {
 			prevContext = context;
 			std::string json = LpwstrToString(context);

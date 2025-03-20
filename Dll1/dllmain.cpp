@@ -8,6 +8,9 @@ PanelWindow panel;
 ChatPanelWindow chatPanel;
 HINSTANCE hInstance;
 
+int totalHeight = 0;
+int scrollPos = 0;
+
 // program entry point
 extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 
@@ -26,6 +29,9 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    totalHeight = 0;
+    scrollPos = 0;
 
     return static_cast<int>(msg.wParam);
 }

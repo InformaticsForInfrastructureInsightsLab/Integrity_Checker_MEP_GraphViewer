@@ -13,7 +13,10 @@ extern MainWindow win;
 extern PanelWindow panel;
 extern ChatPanelWindow chatPanel;
 
-extern std::vector<ChatMessage> messages;
+extern std::vector<std::wstring> messages;
+
+extern int totalHeight;
+extern int scrollPos;
 
 #pragma region MainWindow
 BOOL MainWindow::Create(PCWSTR lpWindowName,
@@ -41,10 +44,6 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 }
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
-    static bool isDragging = false;
-    static POINT ptLastMousePos;
-
     switch (uMsg) {
     case WM_CREATE:
         // 입력 칸 (Edit Control) 생성
@@ -66,7 +65,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         hScroll = CreateWindowEx(0, L"SCROLLBAR", nullptr,
             WS_CHILD | WS_VISIBLE | SBS_VERT,
-            920, 350, 20, 140, m_hwnd, (HMENU)1201, GetModuleHandle(NULL), nullptr);
+            920, 350, 20, 140, m_hwnd, (HMENU)1301, GetModuleHandle(NULL), nullptr);
 
         hListView = CreateWindowEx(
             WS_EX_CLIENTEDGE, WC_LISTVIEW, L" ",
@@ -76,15 +75,15 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | WS_BORDER |  SS_NOTIFY, 0,
-            0, 0, 640, 340, m_hwnd, (HMENU)3001)) {
+            WS_CHILD | WS_VISIBLE | WS_BORDER | SS_NOTIFY, 0,
+            10, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
-            WS_CHILD | WS_VISIBLE | SBS_VERT | SS_NOTIFY, WS_EX_CLIENTEDGE,
-            10, 350, 920, 140, m_hwnd, (HMENU)1002)) {
+            WS_CHILD | WS_VISIBLE | WS_BORDER | SBS_VERT | SS_NOTIFY, 0,
+            10, 350, 920, 140, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
         break;    
@@ -93,6 +92,32 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_callback();
         }
         break;
+    case WM_VSCROLL: {
+        int scrollCode = LOWORD(wParam);
+        int pos = HIWORD(wParam);
+
+        switch (scrollCode) {
+        case SB_LINEUP: scrollPos -= 10; break;
+        case SB_LINEDOWN: scrollPos += 10; break;
+        case SB_PAGEUP: scrollPos -= 50; break;
+        case SB_PAGEDOWN: scrollPos += 50; break;
+        case SB_THUMBTRACK: scrollPos = pos; break;
+        }
+
+        // 스크롤 위치 제한
+        if (scrollPos < 0) scrollPos = 0;
+        if (scrollPos > totalHeight - 400) scrollPos = totalHeight - 400;
+
+        // 패널 다시 그리기
+        InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
+        SetScrollPos(hScroll, SB_CTL, scrollPos, TRUE);
+        break;
+    }
+    case WM_MOUSEWHEEL: {
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+        SendMessage(m_hwnd, WM_VSCROLL, (delta > 0 ? SB_LINEUP : SB_LINEDOWN), 0);
+        break;
+    }
     case WM_CLOSE:
         DestroyWindow(m_hwnd);
         break;
@@ -253,7 +278,6 @@ void MainWindow::AddItems(nlohmann::json context) {
 
 
 #pragma region PanelWindow
-extern MainWindow win;
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 0.7f;
     static Graph* graph = nullptr;
@@ -376,8 +400,42 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 
 LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_CREATE:
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(m_hwnd, &ps);
+
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1)); // 기본 배경색
+
+        int yOffset = -scrollPos + 10; // 스크롤 적용
+        for (size_t i = 0; i < messages.size(); i++) {
+            RECT bubbleRect = { 10, yOffset, 320, yOffset + 40 };
+
+            // 말풍선 배경색 (연한 파란색)
+            HBRUSH hBrush = CreateSolidBrush(RGB(173, 216, 230));
+            FillRect(hdc, &bubbleRect, hBrush);
+            DeleteObject(hBrush);
+
+            // 말풍선 테두리 (검은색)
+            HPEN hPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 0));
+            SelectObject(hdc, hPen);
+            SelectObject(hdc, GetStockObject(NULL_BRUSH));
+
+            RoundRect(hdc, bubbleRect.left, bubbleRect.top, bubbleRect.right, bubbleRect.bottom, 15, 15);
+
+            DeleteObject(hPen);
+
+            // 텍스트 출력
+            SetBkMode(hdc, TRANSPARENT);
+            DrawText(hdc, messages[i].c_str(), -1, &bubbleRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+            yOffset += 40 + 10; // 다음 메시지 위치
+        }
+
+        EndPaint(m_hwnd, &ps);
         break;
+    }
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }
@@ -388,6 +446,13 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
     DWORD dwStyle, DWORD dwExStyle,
     int x, int y, int nWidth, int nHeight,
     HWND hWndParent, HMENU hMenu) {
+
+    WNDCLASS wc = { 0 };
+
+    wc.lpfnWndProc = WindowProc;
+    wc.hInstance = GetModuleHandle(NULL);
+    wc.lpszClassName = ClassName();
+    RegisterClass(&wc);
 
     RECT size = { x,y,nWidth,nHeight };
     AdjustWindowRect(&size, dwStyle, FALSE);

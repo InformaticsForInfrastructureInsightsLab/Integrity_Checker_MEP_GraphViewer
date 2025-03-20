@@ -90,12 +90,13 @@ public:
     );
 };
 
-class ChatPanelWindow : public PanelWindow {
+class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
+    int width, height;
 public:
-    ChatPanelWindow() { }
+    ChatPanelWindow() : width(0), height(0) { }
 
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
-    PCWSTR ClassName() const { return L"STATIC"; }
+    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    PCWSTR ClassName() const { return L"ChatWindowPanel"; }
 
     BOOL Create(PCWSTR lpWindowName,
         DWORD dwStyle, DWORD dwExStyle = 0,
@@ -105,7 +106,7 @@ public:
         int nHeight = CW_USEDEFAULT,
         HWND hWndParent = 0,
         HMENU hMenu = 0
-    ) override;
+    );
 };
 
 class MainWindow : public BaseWindow<MainWindow> {
