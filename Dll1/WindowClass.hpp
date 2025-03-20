@@ -90,15 +90,33 @@ public:
     );
 };
 
+class ChatPanelWindow : public PanelWindow {
+public:
+    ChatPanelWindow() { }
+
+    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    PCWSTR ClassName() const { return L"STATIC"; }
+
+    BOOL Create(PCWSTR lpWindowName,
+        DWORD dwStyle, DWORD dwExStyle = 0,
+        int x = CW_USEDEFAULT,
+        int y = CW_USEDEFAULT,
+        int nWidth = CW_USEDEFAULT,
+        int nHeight = CW_USEDEFAULT,
+        HWND hWndParent = 0,
+        HMENU hMenu = 0
+    ) override;
+};
+
 class MainWindow : public BaseWindow<MainWindow> {
 public:
-    HWND hEdit, hButton, hAnswer;
+    HWND hEdit, hButton, hScroll;
     HWND hListView;
 public:
     MainWindow() {
         hEdit = nullptr;
         hButton = nullptr;
-        hAnswer = nullptr;
+        hScroll = nullptr;
         hListView = nullptr;
     }
 

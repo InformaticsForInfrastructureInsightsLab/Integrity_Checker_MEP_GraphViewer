@@ -5,6 +5,7 @@
 
 MainWindow win;
 PanelWindow panel;
+ChatPanelWindow chatPanel;
 HINSTANCE hInstance;
 
 // program entry point

@@ -63,8 +63,8 @@ extern "C" {
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
 		std::string my_chat = LpwstrToString(text);
 		messages.push_back({ my_chat, true });
-		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)StringToLpwstr(my_chat));
-		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
+
+
 		SetWindowText(win.hEdit, L" ");
 		return text;
 	}
@@ -76,8 +76,6 @@ extern "C" {
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
 		messages.push_back({ LpwstrToString(result), false });
-		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)result);
-		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
 
 		try {
 			prevContext = context;

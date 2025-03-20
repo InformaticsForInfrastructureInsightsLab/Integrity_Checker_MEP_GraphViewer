@@ -11,6 +11,7 @@ extern GUIDExportFunc g_guidExport;
 
 extern MainWindow win;
 extern PanelWindow panel;
+extern ChatPanelWindow chatPanel;
 
 extern std::vector<ChatMessage> messages;
 
@@ -63,15 +64,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
 
-        // 채팅 폼
-        hAnswer = CreateWindowEx(
-            WS_EX_CLIENTEDGE,
-            L"LISTBOX",
-            L" ",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | WS_VSCROLL,
-            10, 350, 930, 140,
-            m_hwnd, (HMENU)1002,
-            GetModuleHandle(NULL), nullptr);
+        hScroll = CreateWindowEx(0, L"SCROLLBAR", nullptr,
+            WS_CHILD | WS_VISIBLE | SBS_VERT,
+            920, 350, 20, 140, m_hwnd, (HMENU)1201, GetModuleHandle(NULL), nullptr);
 
         hListView = CreateWindowEx(
             WS_EX_CLIENTEDGE, WC_LISTVIEW, L" ",
@@ -81,69 +76,18 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY, 0,
+            WS_CHILD | WS_VISIBLE | WS_BORDER |  SS_NOTIFY, 0,
             0, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
-        break;
-    case WM_MEASUREITEM:
-        if (wParam == 1002) {
-            LPMEASUREITEMSTRUCT pMIS = (LPMEASUREITEMSTRUCT)lParam;
-            if (pMIS->itemID < messages.size()) {
-                HDC hdc = GetDC(m_hwnd);
-                RECT rc = { 0, 0, 300, 0 };  // 최대 가로 폭 300px
-                DrawText(hdc, StringToLpwstr(messages[pMIS->itemID].text), -1, &rc, DT_CALCRECT | DT_WORDBREAK);
-                ReleaseDC(m_hwnd, hdc);
 
-                pMIS->itemHeight = rc.bottom - rc.top + 10;  // 여백 추가
-            }
+        // 채팅 패널
+        if (!chatPanel.Create(L"ChattingPanel",
+            WS_CHILD | WS_VISIBLE | SBS_VERT | SS_NOTIFY, WS_EX_CLIENTEDGE,
+            10, 350, 920, 140, m_hwnd, (HMENU)1002)) {
+            MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
-        break;
-    case WM_DRAWITEM:
-        if (wParam == 1002) {
-            
-            LPDRAWITEMSTRUCT pDIS = (LPDRAWITEMSTRUCT)lParam;
-            if (pDIS->itemID < messages.size()) {
-                ChatMessage msg = messages[pDIS->itemID];
-
-                HDC hdc = pDIS->hDC;
-                RECT textRect = { 0, 0, 500, 0 }; // 최대 너비 200px
-                DrawText(hdc, StringToLpwstr(msg.text), -1, &textRect, DT_CALCRECT | DT_WORDBREAK);
-
-                int bubbleWidth = textRect.right - textRect.left + 20; // 여백 포함
-                int bubbleHeight = textRect.bottom - textRect.top + 10;
-
-                RECT bubbleRect = pDIS->rcItem;
-                if (msg.isMyMessage) {
-                    bubbleRect.left = pDIS->rcItem.right - bubbleWidth - 10;
-                    bubbleRect.right = pDIS->rcItem.right - 10;
-                }
-                else {
-                    bubbleRect.left = pDIS->rcItem.left + 10;
-                    bubbleRect.right = pDIS->rcItem.left + bubbleWidth + 10;
-                }
-                bubbleRect.top += 5;
-                bubbleRect.bottom = bubbleRect.top + bubbleHeight;
-
-                // 말풍선 배경
-                HBRUSH hBrush = CreateSolidBrush(msg.isMyMessage ? RGB(173, 216, 230) : RGB(220, 220, 220));
-                FillRect(hdc, &bubbleRect, hBrush);
-                DeleteObject(hBrush);
-
-                // 테두리
-                FrameRect(hdc, &bubbleRect, (HBRUSH)GetStockObject(BLACK_BRUSH));
-
-                // 텍스트 출력
-                textRect.left = bubbleRect.left + 10;
-                textRect.right = bubbleRect.right - 10;
-                textRect.top = bubbleRect.top + 5;
-                textRect.bottom = bubbleRect.bottom - 5;
-
-                SetBkMode(hdc, TRANSPARENT);
-                DrawText(hdc, StringToLpwstr(msg.text), -1, &textRect, DT_WORDBREAK);
-            }
-        }
-        break;
+        break;    
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
@@ -408,7 +352,6 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = ClassName();
-    wc.hbrBackground = (HBRUSH)(BLACK_BRUSH + 1);
     RegisterClass(&wc);
 
     RECT size = { x,y,nWidth,nHeight };
@@ -417,14 +360,52 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
     width = size.right - size.left;
     height = size.bottom - size.top;
 
-    m_hwnd = CreateWindow(
-        ClassName(), lpWindowName, dwStyle, 
+    m_hwnd = CreateWindowEx( 
+        dwExStyle,
+        ClassName(), lpWindowName, 
+        dwStyle, 
         x, y, width, height,
         hWndParent, hMenu, GetModuleHandle(NULL), this
     );
 
     return (m_hwnd ? TRUE : FALSE);
 }
+#pragma endregion
+
+#pragma region ChatPanelWindow
+
+LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg) {
+    case WM_CREATE:
+        break;
+    default:
+        return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+    }
+    return 0;
+}
+
+BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
+    DWORD dwStyle, DWORD dwExStyle,
+    int x, int y, int nWidth, int nHeight,
+    HWND hWndParent, HMENU hMenu) {
+
+    RECT size = { x,y,nWidth,nHeight };
+    AdjustWindowRect(&size, dwStyle, FALSE);
+
+    width = size.right - size.left;
+    height = size.bottom - size.top;
+
+    m_hwnd = CreateWindowEx(
+        dwExStyle,
+        ClassName(), lpWindowName,
+        dwStyle,
+        x, y, width, height,
+        hWndParent, hMenu, GetModuleHandle(NULL), this
+    );
+
+    return (m_hwnd ? TRUE : FALSE);
+}
+
 #pragma endregion
 
 #pragma region CircleWindow
