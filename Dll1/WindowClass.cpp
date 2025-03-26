@@ -266,7 +266,6 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         RegisterClass(&wc);
 
         WNDCLASS wc_line = {};
-        wc_line.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
         wc_line.lpfnWndProc = LineWindow::LineProc;
         wc_line.hInstance = GetModuleHandle(NULL);
         wc_line.lpszClassName = L"LINECLASS";
@@ -279,7 +278,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         graph = reinterpret_cast<Graph*>(lParam);
         RECT wnd_sz = { 0,0,width, height };
-        InvalidateRect(m_hwnd, &wnd_sz, true);
+        InvalidateRect(m_hwnd, &wnd_sz, true);        
         break;
     }
     case WM_PAINT: {
@@ -352,6 +351,9 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
     wc.lpszClassName = ClassName();
     RegisterClass(&wc);
 
+    width = nWidth;
+    height = nHeight;
+
     m_hwnd = CreateWindowEx( 
         dwExStyle,
         ClassName(), lpWindowName, 
@@ -368,42 +370,6 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 
 LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(m_hwnd, &ps);
-
-        RECT rc;
-        GetClientRect(m_hwnd, &rc);
-        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1)); // 기본 배경색
-
-        int yOffset = -scrollPos + 10; // 스크롤 적용
-        for (size_t i = 0; i < messages.size(); i++) {
-            RECT bubbleRect = { 10, yOffset, 320, yOffset + 40 };
-
-            // 말풍선 배경색 (연한 파란색)
-            HBRUSH hBrush = CreateSolidBrush(RGB(173, 216, 230));
-            FillRect(hdc, &bubbleRect, hBrush);
-            DeleteObject(hBrush);
-
-            // 말풍선 테두리 (검은색)
-            HPEN hPen = CreatePen(PS_SOLID, 2, RGB(0, 0, 0));
-            SelectObject(hdc, hPen);
-            SelectObject(hdc, GetStockObject(NULL_BRUSH));
-
-            RoundRect(hdc, bubbleRect.left, bubbleRect.top, bubbleRect.right, bubbleRect.bottom, 15, 15);
-
-            DeleteObject(hPen);
-
-            // 텍스트 출력
-            SetBkMode(hdc, TRANSPARENT);
-            DrawText(hdc, messages[i].c_str(), -1, &bubbleRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-
-            yOffset += 40 + 10; // 다음 메시지 위치
-        }
-
-        EndPaint(m_hwnd, &ps);
-        break;
-    }
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }
