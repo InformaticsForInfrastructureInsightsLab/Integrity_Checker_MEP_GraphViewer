@@ -65,24 +65,22 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 채팅 폼
         hAnswer = CreateWindowEx(
-            WS_EX_CLIENTEDGE,
-            L"LISTBOX",
-            L" ",
+            0, L"LISTBOX", L" ",
             WS_CHILD | WS_VISIBLE | WS_BORDER | LBS_NOTIFY | LBS_OWNERDRAWVARIABLE | WS_VSCROLL,
             10, 350, 930, 140,
             m_hwnd, (HMENU)1002,
             GetModuleHandle(NULL), nullptr);
 
         hListView = CreateWindowEx(
-            WS_EX_CLIENTEDGE, WC_LISTVIEW, L" ",
-            WS_CHILD | WS_VISIBLE | LVS_REPORT,
+            0, WC_LISTVIEW, L" ",
+            WS_CHILD | WS_VISIBLE | WS_BORDER | LVS_REPORT,
             645, 0, 300, 340, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
         CreateColumn();
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | SS_WHITEFRAME | SS_NOTIFY, 0,
-            0, 0, 640, 340, m_hwnd, (HMENU)3001)) {
+            WS_CHILD | WS_VISIBLE | WS_BORDER | SS_NOTIFY, 0,
+            5, 0, 635, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
         break;
@@ -107,7 +105,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 ChatMessage msg = messages[pDIS->itemID];
 
                 HDC hdc = pDIS->hDC;
-                RECT textRect = { 0, 0, 500, 0 }; // 최대 너비 200px
+                RECT textRect = { 0, 0, 500, 0 }; // 최대 너비 500px
                 DrawText(hdc, StringToLpwstr(msg.text), -1, &textRect, DT_CALCRECT | DT_WORDBREAK);
 
                 int bubbleWidth = textRect.right - textRect.left + 20; // 여백 포함
