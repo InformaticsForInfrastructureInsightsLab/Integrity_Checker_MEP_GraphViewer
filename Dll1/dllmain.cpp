@@ -14,7 +14,7 @@ int scrollPos = 0;
 // program entry point
 extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 
-    if (!win.Create(L"Ai Assistance", WS_OVERLAPPEDWINDOW, 0,
+    if (!win.Create(L"Ai Assistance", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, 0,
         CW_USEDEFAULT, CW_USEDEFAULT, 950, 600))
     {
         return 0;

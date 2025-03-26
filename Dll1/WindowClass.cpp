@@ -75,15 +75,15 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | SS_NOTIFY, 0,
+            WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
             10, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | SBS_VERT | SS_NOTIFY, 0,
-            10, 350, 920, 140, m_hwnd, (HMENU)3003)) {
+            WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
+            10, 350, 910, 140, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
         break;    
@@ -92,32 +92,6 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_callback();
         }
         break;
-    case WM_VSCROLL: {
-        int scrollCode = LOWORD(wParam);
-        int pos = HIWORD(wParam);
-
-        switch (scrollCode) {
-        case SB_LINEUP: scrollPos -= 10; break;
-        case SB_LINEDOWN: scrollPos += 10; break;
-        case SB_PAGEUP: scrollPos -= 50; break;
-        case SB_PAGEDOWN: scrollPos += 50; break;
-        case SB_THUMBTRACK: scrollPos = pos; break;
-        }
-
-        // 스크롤 위치 제한
-        if (scrollPos < 0) scrollPos = 0;
-        if (scrollPos > totalHeight - 400) scrollPos = totalHeight - 400;
-
-        // 패널 다시 그리기
-        InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
-        SetScrollPos(hScroll, SB_CTL, scrollPos, TRUE);
-        break;
-    }
-    case WM_MOUSEWHEEL: {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-        SendMessage(m_hwnd, WM_VSCROLL, (delta > 0 ? SB_LINEUP : SB_LINEDOWN), 0);
-        break;
-    }
     case WM_CLOSE:
         DestroyWindow(m_hwnd);
         break;
@@ -378,17 +352,11 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
     wc.lpszClassName = ClassName();
     RegisterClass(&wc);
 
-    RECT size = { x,y,nWidth,nHeight };
-    AdjustWindowRect(&size, dwStyle, FALSE);
-
-    width = size.right - size.left;
-    height = size.bottom - size.top;
-
     m_hwnd = CreateWindowEx( 
         dwExStyle,
         ClassName(), lpWindowName, 
         dwStyle, 
-        x, y, width, height,
+        x, y, nWidth, nHeight,
         hWndParent, hMenu, GetModuleHandle(NULL), this
     );
 
@@ -454,17 +422,11 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
     wc.lpszClassName = ClassName();
     RegisterClass(&wc);
 
-    RECT size = { x,y,nWidth,nHeight };
-    AdjustWindowRect(&size, dwStyle, FALSE);
-
-    width = size.right - size.left;
-    height = size.bottom - size.top;
-
     m_hwnd = CreateWindowEx(
         dwExStyle,
         ClassName(), lpWindowName,
         dwStyle,
-        x, y, width, height,
+        x, y, nWidth, nHeight,
         hWndParent, hMenu, GetModuleHandle(NULL), this
     );
 
