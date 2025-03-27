@@ -418,8 +418,8 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         switch (LOWORD(wParam)) {
         case SB_LINEUP: pos -= 20; break;
         case SB_LINEDOWN: pos += 20; break;
-        case SB_PAGEUP: pos -= 100; break;
-        case SB_PAGEDOWN: pos += 100; break;
+        case SB_PAGEUP: pos -= 20; break;
+        case SB_PAGEDOWN: pos += 20; break;
         case SB_THUMBTRACK: pos = HIWORD(wParam); break;
         }
 
@@ -429,6 +429,13 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
             SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
             InvalidateRect(m_hwnd, NULL, TRUE);
         }
+        break;
+    }
+    case WM_ERASEBKGND: {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1)); // ¹è°æ»ö Èò»ö
         break;
     }
     case WM_PAINT: {
