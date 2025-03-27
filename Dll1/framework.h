@@ -13,3 +13,4 @@
 
 // 윈도우 커스텀 유저 메시지
 #define WM_UPDATE_GRAPH (WM_USER+1)
+#define WM_UPDATE_CHAT (WM_USER+2)

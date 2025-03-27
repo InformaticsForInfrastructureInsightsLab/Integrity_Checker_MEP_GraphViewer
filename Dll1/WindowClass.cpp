@@ -369,7 +369,63 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 #pragma region ChatPanelWindow
 
 LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    static std::wstring* Pmsg;
+
     switch (uMsg) {
+    case WM_UPDATE_CHAT: {
+        Pmsg = reinterpret_cast<std::wstring*>(lParam);
+        RECT r;
+        GetWindowRect(m_hwnd, &r);
+        InvalidateRect(m_hwnd, &r, false);
+        break;
+    }
+    
+    case WM_PAINT: {
+        if (!Pmsg) break;
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(m_hwnd, &ps);
+
+        // 1. 백버퍼 생성 (메모리 DC)
+        HDC hMemDC = CreateCompatibleDC(hdc);
+        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
+        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
+
+        // 배경을 흰색으로 지움
+        PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
+
+        RECT r = { 10, 10, 500, 0 }; // 최대 너비는 500
+        DrawText(hdc, Pmsg->c_str(), -1, &r, DT_WORDBREAK | DT_CALCRECT);
+
+        // 말풍선 배경 그리기
+        int radius = 12;
+        HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235)); // 하늘색
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, GetStockObject(NULL_PEN));
+
+        RoundRect(hdc, r.left - 10, r.top - 5, r.right + 10, r.bottom + 5, radius, radius);
+
+        // 리소스 복원 및 정리
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+
+        // 텍스트 출력
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(0, 0, 0)); // 검정색 글자
+        DrawText(hdc, Pmsg->c_str(), -1, &r, DT_WORDBREAK | DT_LEFT | DT_TOP);
+
+        BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
+
+        // 5. 리소스 정리
+        SelectObject(hMemDC, hOldBitmap);
+        DeleteObject(hBitmap);
+        DeleteDC(hMemDC);
+
+        EndPaint(m_hwnd, &ps);
+        delete Pmsg;
+        Pmsg = nullptr;
+        break;
+    }
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
     }

@@ -46,7 +46,6 @@ CallbackFunc g_callback = nullptr;
 GUIDExportFunc g_guidExport = nullptr;
 LPWSTR prevContext = nullptr;
 
-std::vector<std::wstring> messages;
 extern int totalHeight;
 extern int scrollPos;
 
@@ -54,15 +53,14 @@ extern int scrollPos;
 void AddChatMessage(const std::wstring& message) {
 	int messageHeight = 40; // 말풍선 높이
 
-	messages.push_back(message);
 	totalHeight += messageHeight + 10;
 
 	// 스크롤바 업데이트
 	SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE, 0, totalHeight - 400, 400, scrollPos, 0 };
 	SetScrollInfo(win.hScroll, SB_CTL, &si, TRUE);
 
-	// 패널 다시 그리기
-	InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
+	auto* copied_msg = new std::wstring(message);
+	PostMessage(chatPanel.m_hwnd, WM_UPDATE_CHAT, NULL, reinterpret_cast<LPARAM>(copied_msg));
 }
 
 extern "C" {
