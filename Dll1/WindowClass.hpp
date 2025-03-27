@@ -72,9 +72,9 @@ protected:
 class PanelWindow : public BaseWindow<PanelWindow> {
 public:
     int width, height;
-   
+    float offsetX, offsetY;
 public:
-    PanelWindow() { }
+    PanelWindow() : offsetX(0), offsetY(0) { }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     PCWSTR ClassName() const { return L"CustomPanel"; }
@@ -93,11 +93,13 @@ public:
 class MainWindow : public BaseWindow<MainWindow> {
 public:
     HWND hEdit, hButton, hAnswer;
+    HWND hListView;
 public:
     MainWindow() {
         hEdit = nullptr;
         hButton = nullptr;
         hAnswer = nullptr;
+        hListView = nullptr;
     }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -112,24 +114,21 @@ public:
         HMENU hMenu = 0
     );
 
-    bool RenderGraph(Graph&& graph);
+    void CreateColumn();
+    void AddItems(nlohmann::json context);
 };
 
-class CircleWindow : public BaseWindow<CircleWindow> {
+extern PanelWindow panel;
+class CircleWindow {
 public:
-
+    static std::vector<HWND> nodes;
 public:
     CircleWindow() { }
 
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
-    PCWSTR ClassName() const { return L" "; }
-    BOOL Create(PCWSTR lpWindowName,
-        DWORD dwStyle, DWORD dwExStyle = 0,
-        int x = CW_USEDEFAULT,
-        int y = CW_USEDEFAULT,
-        int nWidth = CW_USEDEFAULT,
-        int nHeight = CW_USEDEFAULT,
-        HWND hWndParent = 0,
-        HMENU hMenu = 0
-    );
+    static LRESULT CALLBACK NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+};
+
+class LineWindow {
+public:
+    static LRESULT CALLBACK LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

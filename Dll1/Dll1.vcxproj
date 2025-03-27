@@ -180,6 +180,7 @@ xcopy /Y /Q "$(TargetDir)*.lib" "%PLUGIN_DIR%"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Chat.h" />
     <ClInclude Include="Graph.hpp" />
     <ClInclude Include="utils.hpp" />
     <ClInclude Include="WindowClass.hpp" />

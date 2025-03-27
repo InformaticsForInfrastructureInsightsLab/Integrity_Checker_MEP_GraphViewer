@@ -100,12 +100,15 @@ class Graph {
 	std::unique_ptr<Agraph_t, GraphDeleter> g;
 
 public:
-	Graph(nlohmann::json& json);
-	~Graph();
+	Graph(nlohmann::json json);
 
 	void buildGraph();
 	void exportGraphImage();
 	void RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY);
+
+	void Release() {
+		gvFreeLayout(gvc.get(), g.get());
+	}
 
 private:
 	Agnode_t* FindNode(std::string attr) {
@@ -117,8 +120,8 @@ private:
 		return nullptr;
 	}
 
-	void DrawNode(HDC hdc, std::string& name, int x, int y, int rx, int ry);
-	void DrawLine();
+	void DrawNode(Agnode_t* name, int x, int y, int rx, int ry);
+	void DrawLine(Agedge_t* edge, int x1, int y1, int x2, int y2);
 };
 
 #endif //GRAPH_H

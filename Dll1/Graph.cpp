@@ -1,9 +1,19 @@
+#include <unordered_set>
+
 #include "Graph.hpp"
 #include "utils.hpp"
 #include "WindowClass.hpp"
 extern PanelWindow panel;
 
-Graph::Graph(nlohmann::json& json) {
+namespace detail {
+	struct EdgeHash {
+		size_t operator()(const std::pair<Agnode_t*, Agnode_t*>& edge) const {
+			return std::hash<void*>()(edge.first) ^ std::hash<void*>()(edge.second);
+		}
+	};
+}
+
+Graph::Graph(nlohmann::json json) {
 	for (auto& clash : json) {
 		node_map[clash["m"]["properties"]["GUID"]] = std::make_unique<node>(clash["m"]["properties"]);
 		node_map[clash["n"]["properties"]["GUID"]] = std::make_unique<node>(clash["n"]["properties"]);
@@ -12,10 +22,6 @@ Graph::Graph(nlohmann::json& json) {
 		rel.end_node = clash["n"]["properties"]["GUID"];
 		edge_vec.push_back(std::make_unique<edge>(rel));
 	}
-}
-
-Graph::~Graph() {
-	gvFreeLayout(gvc.get(), g.get());
 }
 
 void Graph::buildGraph() {
@@ -69,6 +75,11 @@ void Graph::exportGraphImage() {
 }
 
 void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY) {
+	EnumChildWindows(panel.m_hwnd, +[](HWND hwnd, LPARAM lparam) -> int {
+		DestroyWindow(hwnd);
+		return TRUE;
+		}, 0);
+
 	boxf bbox = GD_bb(g.get());
 	float x_min = bbox.LL.x;
 	float y_min = bbox.LL.y;
@@ -78,83 +89,136 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 	float width = x_max - x_min;
 	float height = y_max - y_min;
 
-	Agnode_t* sample_node = agfstnode(g.get());
+	std::unordered_set<std::pair<Agnode_t*, Agnode_t*>, detail::EdgeHash> visitedEdges;
+	std::unordered_set<Agnode_t*> visitedNodes;
 
-	for (Agedge_t* edge = agfstedge(g.get(), sample_node); edge; edge = agnxtedge(g.get(), edge, sample_node)) {
-		Agnode_t* start = FindNode(agget(edge, const_cast<char*>("start_node")));
-		Agnode_t* end = FindNode(agget(edge, const_cast<char*>("end_node")));
+	for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
+		for (Agedge_t* edge = agfstedge(g.get(), node); edge; edge = agnxtedge(g.get(), edge, node)) {
+			Agnode_t* start = aghead(edge);
+			Agnode_t* end = agtail(edge);
+			std::pair<Agnode_t*, Agnode_t*> edgeKey = { min(start, end), max(start, end) };
 
-		if (!start) {
-			MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
+			if (visitedEdges.find(edgeKey) != visitedEdges.end()) {
+				continue;
+			}
+			visitedEdges.insert(edgeKey);
+
+			if (!start) {
+				MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
+			}
+			if (!end) {
+				MessageBox(panel.m_hwnd, L"end is null", L" ", MB_OK);
+			}
+
+			pointf coord_s = ND_coord(start);
+			pointf coord_e = ND_coord(end);
+
+			// 중점의 x,y좌표
+			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
+			int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
+			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
+			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
+
+			if (x_s > x_e) {
+				int temp = x_s;
+				x_s = x_e;
+				x_e = temp;
+
+				temp = y_s;
+				y_s = y_e;
+				y_e = temp;
+			}
+
+			// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
+			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
+			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
+			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
+			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
+
+			std::string node_name_start = agnameof(start);
+			std::string node_name_end = agnameof(end);
+
+
+			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
+			DrawLine(edge, x_s, y_s, x_e, y_e);
+			if (visitedNodes.find(start) == visitedNodes.end()) {
+				DrawNode(start, x_s, y_s, r_xs, r_ys);
+				visitedNodes.insert(start);
+			}
+			if (visitedNodes.find(end) == visitedNodes.end()) {
+				DrawNode(end, x_e, y_e, r_xe, r_ye);
+				visitedNodes.insert(end);
+			}
 		}
-		if (!end) {
-			MessageBox(panel.m_hwnd, L"end is null", L" ", MB_OK);
-		}
-
-		pointf coord_s = ND_coord(start);
-		pointf coord_e = ND_coord(end);
-		double rad_s = max(ND_width(start), ND_height(start));
-		double rad_e = max(ND_width(end), ND_height(end));
-		
-		// 중점의 x,y좌표
-		int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
-		int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
-		int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
-		int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
-		// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
-		int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
-		int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
-		int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
-		int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
-		
-		std::string node_name_start = agnameof(start);
-		std::string node_name_end = agnameof(end);
-
-		DrawNode(hdc, node_name_start ,x_s, y_s, r_xs, r_ys);
-		DrawNode(hdc, node_name_end, x_e, y_e, r_xe, r_ye);
-
-		// 원과 선의 교차점 찾기
-		int ix1, iy1, ix2, iy2;
-		GraphUtils::GetIntersectionPoint(x_s, y_s, x_e, y_e, r_xs, ix1, iy1);
-		GraphUtils::GetIntersectionPoint(x_e, y_e, x_s, y_s, r_xe, ix2, iy2);
-
-		// 굵기 5px, 검은색 선 생성
-		HPEN hPen = CreatePen(PS_SOLID, 5, RGB(0, 0, 0));
-		HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-
-		// 원의 경계까지만 선 그리기
-		MoveToEx(hdc, ix1, iy1, nullptr);
-		LineTo(hdc, ix2, iy2);
-
-		// 기존 펜 복원 후 새 펜 삭제
-		SelectObject(hdc, hOldPen);
-		DeleteObject(hPen);
-	}
+	}	
 }
 
-void Graph::DrawNode(HDC hdc, std::string& name, int x, int y, int rx, int ry) {
-	HBRUSH hBrush = CreateSolidBrush(RGB(255, 165, 0));
-	HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
+	size_t rv;
+	char* guid = agget(node, const_cast<char*>("guid"));
+	errno_t err = mbstowcs_s(&rv, nullptr, 0, guid, _TRUNCATE);
+
+	// 2. 변환할 wchar_t 배열 할당
+	wchar_t* wGuid = new wchar_t[rv];
+	// 3. 변환 수행
+	err = mbstowcs_s(&rv, wGuid, rv, guid, _TRUNCATE);
 
 	// 노드 그리기
-	Ellipse(hdc, x - rx, y - ry, x + rx, y + ry);
-	SelectObject(hdc, oldBrush);
-	DeleteObject(hBrush);
-
-	// 노드에 글자 쓰기
-	int fontSize = static_cast<int>(rx * 0.5);
-	SetBkMode(hdc, TRANSPARENT);
-	SetTextColor(hdc, RGB(0, 0, 0));
-
-	HFONT hFont = CreateFont(
-		fontSize, 0, 0, 0, FALSE, FALSE, FALSE, FALSE,
-		DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Arial")
+	HWND hwnd = CreateWindowEx(0, L"NODECLASS", wGuid,
+		WS_CHILD | WS_VISIBLE,
+		x - rx, y - ry, 2 * rx, 2 * ry,
+		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
 	);
-	HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-	SIZE size;
-	GetTextExtentPoint32A(hdc, name.c_str(), name.length(), &size);
-	int text_x = x - (size.cx / 2);
-	int text_y = y - (size.cy / 2);
-	TextOutA(hdc, text_x, text_y, name.c_str(), name.length());
+	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(node));
+}
+
+void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
+	int thickness = 3;
+
+	int anchor_x = x1 < x2 ? x1 : x2;
+	int anchor_y = y1 < y2 ? y1 : y2;
+	int len = abs(x2 - x1) > thickness ? abs(x2-x1) : thickness;
+	int height = abs(y2 - y1) > thickness ? abs(y2 - y1) : thickness;
+
+	HWND line = CreateWindowEx(
+		0,
+		L"LINECLASS", L"Line Window", WS_CHILD | WS_VISIBLE,
+		anchor_x, anchor_y, len, height, 
+		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);
+	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(edge));	
+
+	RECT client;
+	GetClientRect(line, &client);
+
+	POINT pt[4];
+
+	//(x1,y1)을 원점으로 (x2,y2)는 몇사분면에 있는지에 따라 클라이언트 영역을 잘라줄거임
+	// 윈도우의 좌표는 밑으로 갈수록 증가하고 오른쪽으로 갈수록 증가함에 주의
+	if (x1 < x2 && y1 > y2) {
+		pt[0].x = client.right;  pt[0].y = client.top;
+		pt[1].x = client.right;  pt[1].y = client.top + thickness;
+		pt[2].x = client.left;   pt[2].y = client.bottom;
+		pt[3].x = client.left;   pt[3].y = client.bottom - thickness;
+	}
+	else if (x1 > x2 && y1 > y2) {
+		pt[0].x = client.left;  pt[0].y = client.top;
+		pt[1].x = client.left;  pt[1].y = client.top + thickness;
+		pt[2].x = client.right;   pt[2].y = client.bottom;
+		pt[3].x = client.right;   pt[3].y = client.bottom - thickness;
+	}
+	else if (x1 > x2 && y1 < y2) {
+		pt[0].x = client.left;  pt[0].y = client.bottom;
+		pt[1].x = client.left;  pt[1].y = client.bottom - thickness;
+		pt[2].x = client.right;   pt[2].y = client.top;
+		pt[3].x = client.right;   pt[3].y = client.top + thickness;
+	}
+	else {
+		pt[0].x = client.left;  pt[0].y = client.top;
+		pt[1].x = client.left;  pt[1].y = client.top + thickness;
+		pt[2].x = client.right;   pt[2].y = client.bottom;
+		pt[3].x = client.right;   pt[3].y = client.bottom - thickness;
+	}
+	HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
+	SetWindowRgn(line, hRgn, TRUE);
+	DeleteObject(hRgn);
 }

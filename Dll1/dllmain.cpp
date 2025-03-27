@@ -4,20 +4,14 @@
 #include "utils.hpp"
 
 MainWindow win;
-CircleWindow c1, c2;
 PanelWindow panel;
-
-using namespace Gdiplus;
 HINSTANCE hInstance;
 
 // program entry point
 extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
-    // GDI+ 초기화
-    GdiplusStartupInput gdiplusStartupInput;
-    ULONG_PTR gdiplusToken;
-    GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
-    if (!win.Create(L"Ai Assistance", WS_OVERLAPPEDWINDOW))
+    if (!win.Create(L"Ai Assistance", WS_OVERLAPPEDWINDOW, 0,
+        CW_USEDEFAULT, CW_USEDEFAULT, 950, 600))
     {
         return 0;
     }
@@ -31,8 +25,6 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-
-    GdiplusShutdown(gdiplusToken);
 
     return static_cast<int>(msg.wParam);
 }
