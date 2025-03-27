@@ -92,6 +92,7 @@ public:
 
 class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
     int width, height;
+    std::vector<std::wstring> messages;
 public:
     ChatPanelWindow() : width(0), height(0) { }
 
@@ -107,6 +108,32 @@ public:
         HWND hWndParent = 0,
         HMENU hMenu = 0
     );
+
+private:
+    int AddMessageAndMeasure(HDC hdc, const std::wstring& msg, int maxWidth, RECT& outRect, int yStart) {
+        outRect = { 10, yStart, 20 + maxWidth, yStart };
+        DrawText(hdc, msg.c_str(), -1, &outRect, DT_WORDBREAK | DT_CALCRECT);
+        return outRect.bottom - yStart + 10;
+    }
+
+    void DrawBalloon(HDC hdc, const RECT& r, const std::wstring& text) {
+        int radius = 12;
+
+        HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235));
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, GetStockObject(NULL_PEN));
+
+        RoundRect(hdc, r.left - 10, r.top - 5, r.right + 10, r.bottom + 5, radius, radius);
+
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(0, 0, 0));
+        DrawText(hdc, text.c_str(), -1, const_cast<RECT*>(&r), DT_WORDBREAK | DT_LEFT | DT_TOP);
+    }
+
 };
 
 class MainWindow : public BaseWindow<MainWindow> {

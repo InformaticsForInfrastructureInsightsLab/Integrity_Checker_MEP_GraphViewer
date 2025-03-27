@@ -51,14 +51,6 @@ extern int scrollPos;
 
 // 채팅 메시지를 패널에 추가
 void AddChatMessage(const std::wstring& message) {
-	int messageHeight = 40; // 말풍선 높이
-
-	totalHeight += messageHeight + 10;
-
-	// 스크롤바 업데이트
-	SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE, 0, totalHeight - 400, 400, scrollPos, 0 };
-	SetScrollInfo(win.hScroll, SB_CTL, &si, TRUE);
-
 	auto* copied_msg = new std::wstring(message);
 	PostMessage(chatPanel.m_hwnd, WM_UPDATE_CHAT, NULL, reinterpret_cast<LPARAM>(copied_msg));
 }

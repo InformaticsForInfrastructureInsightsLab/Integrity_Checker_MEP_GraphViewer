@@ -63,10 +63,6 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
 
-        hScroll = CreateWindowEx(0, L"SCROLLBAR", nullptr,
-            WS_CHILD | WS_VISIBLE | SBS_VERT,
-            920, 350, 20, 140, m_hwnd, (HMENU)1301, GetModuleHandle(NULL), nullptr);
-
         hListView = CreateWindowEx(
             WS_EX_CLIENTEDGE, WC_LISTVIEW, L" ",
             WS_CHILD | WS_VISIBLE | LVS_REPORT,
@@ -83,7 +79,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
             WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
-            10, 350, 910, 140, m_hwnd, (HMENU)3003)) {
+            10, 350, 930, 140, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
         break;    
@@ -369,61 +365,85 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 #pragma region ChatPanelWindow
 
 LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static std::wstring* Pmsg;
+    static int scrollOffset = 0;
+    static int totalContentHeight = 0;
+    static int clientHeight = 0;
 
     switch (uMsg) {
     case WM_UPDATE_CHAT: {
-        Pmsg = reinterpret_cast<std::wstring*>(lParam);
+        std::wstring* Pmsg = reinterpret_cast<std::wstring*>(lParam);
+        messages.push_back(*Pmsg);
+        delete Pmsg;
+
+        HDC hdc = GetDC(m_hwnd);
         RECT r;
-        GetWindowRect(m_hwnd, &r);
-        InvalidateRect(m_hwnd, &r, false);
+        int newMsgHeight = AddMessageAndMeasure(hdc, messages.back(), width, r, totalContentHeight);
+        ReleaseDC(m_hwnd, hdc);
+
+        // 기존 내용 위로 스크롤
+        ScrollWindowEx(m_hwnd, 0, -newMsgHeight, NULL, NULL, NULL, NULL, SW_INVALIDATE);
+        totalContentHeight += newMsgHeight;
+
+        scrollOffset = max(0, totalContentHeight - clientHeight);
+        SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
+        InvalidateRect(m_hwnd, NULL, TRUE);
+
+        // 스크롤 정보 갱신
+        SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
+        si.nMin = 0;
+        si.nMax = totalContentHeight;
+        si.nPage = clientHeight;
+        si.nPos = scrollOffset;
+        SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
+
+        // 하단 새 메시지 영역만 다시 그림
+        RECT invalidRect = { 0, clientHeight - newMsgHeight, width + 40, clientHeight };
+        InvalidateRect(m_hwnd, &invalidRect, TRUE);
+        break;
+    }    
+    case WM_SIZE:
+        clientHeight = HIWORD(lParam);
+        {
+            SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
+            si.nMin = 0;
+            si.nMax = totalContentHeight;
+            si.nPage = clientHeight;
+            si.nPos = scrollOffset;
+            SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
+        }
+        break;
+    case WM_VSCROLL: {
+        int pos = scrollOffset;
+
+        switch (LOWORD(wParam)) {
+        case SB_LINEUP: pos -= 20; break;
+        case SB_LINEDOWN: pos += 20; break;
+        case SB_PAGEUP: pos -= 100; break;
+        case SB_PAGEDOWN: pos += 100; break;
+        case SB_THUMBTRACK: pos = HIWORD(wParam); break;
+        }
+
+        pos = max(0, min(pos, totalContentHeight - clientHeight));
+        if (pos != scrollOffset) {
+            scrollOffset = pos;
+            SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
+            InvalidateRect(m_hwnd, NULL, TRUE);
+        }
         break;
     }
-    
     case WM_PAINT: {
-        if (!Pmsg) break;
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
+        int y = 10 - scrollOffset;
 
-        // 1. 백버퍼 생성 (메모리 DC)
-        HDC hMemDC = CreateCompatibleDC(hdc);
-        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
-        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
-
-        // 배경을 흰색으로 지움
-        PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
-
-        RECT r = { 10, 10, 500, 0 }; // 최대 너비는 500
-        DrawText(hdc, Pmsg->c_str(), -1, &r, DT_WORDBREAK | DT_CALCRECT);
-
-        // 말풍선 배경 그리기
-        int radius = 12;
-        HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235)); // 하늘색
-        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
-        HPEN hOldPen = (HPEN)SelectObject(hdc, GetStockObject(NULL_PEN));
-
-        RoundRect(hdc, r.left - 10, r.top - 5, r.right + 10, r.bottom + 5, radius, radius);
-
-        // 리소스 복원 및 정리
-        SelectObject(hdc, hOldBrush);
-        DeleteObject(hBrush);
-        SelectObject(hdc, hOldPen);
-
-        // 텍스트 출력
-        SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(0, 0, 0)); // 검정색 글자
-        DrawText(hdc, Pmsg->c_str(), -1, &r, DT_WORDBREAK | DT_LEFT | DT_TOP);
-
-        BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
-
-        // 5. 리소스 정리
-        SelectObject(hMemDC, hOldBitmap);
-        DeleteObject(hBitmap);
-        DeleteDC(hMemDC);
+        for (const auto& msg : messages) {
+            RECT r;
+            int h = AddMessageAndMeasure(hdc, msg, 400, r, y);
+            DrawBalloon(hdc, r, msg);
+            y += h + 10;
+        }
 
         EndPaint(m_hwnd, &ps);
-        delete Pmsg;
-        Pmsg = nullptr;
         break;
     }
     default:
