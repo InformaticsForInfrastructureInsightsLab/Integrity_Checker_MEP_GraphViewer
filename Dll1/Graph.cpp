@@ -35,10 +35,10 @@ void Graph::buildGraph() {
 		node* start_node = node_map[clash->start_node].get();
 		node* end_node = node_map[clash->end_node].get();
 
-		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->ElementType.c_str()), TRUE);
-		agsafeset(n1, const_cast<char*>("guid"), const_cast<char*>(start_node->GUID.c_str()), const_cast<char*>("default_value"));
-		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->ElementType.c_str()), TRUE);
-		agsafeset(n2, const_cast<char*>("guid"), const_cast<char*>(end_node->GUID.c_str()), const_cast<char*>("default_value"));
+		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->GUID.c_str()), TRUE);
+		agsafeset(n1, const_cast<char*>("element_type"), const_cast<char*>(start_node->ElementType.c_str()), const_cast<char*>("default_value"));
+		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->GUID.c_str()), TRUE);
+		agsafeset(n2, const_cast<char*>("element_type"), const_cast<char*>(end_node->ElementType.c_str()), const_cast<char*>("default_value"));
 
 		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
 		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용
@@ -98,11 +98,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			Agnode_t* end = agtail(edge);
 			std::pair<Agnode_t*, Agnode_t*> edgeKey = { min(start, end), max(start, end) };
 
-			if (visitedEdges.find(edgeKey) != visitedEdges.end()) {
-				continue;
-			}
-			visitedEdges.insert(edgeKey);
-
 			if (!start) {
 				MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
 			}
@@ -135,12 +130,11 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
 			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
 
-			std::string node_name_start = agnameof(start);
-			std::string node_name_end = agnameof(end);
-
-
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
-			DrawLine(edge, x_s, y_s, x_e, y_e);
+			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
+				DrawLine(edge, x_s, y_s, x_e, y_e);
+				visitedEdges.insert(edgeKey);				
+			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
 				DrawNode(start, x_s, y_s, r_xs, r_ys);
 				visitedNodes.insert(start);
@@ -155,13 +149,13 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 	size_t rv;
-	char* guid = agget(node, const_cast<char*>("guid"));
-	errno_t err = mbstowcs_s(&rv, nullptr, 0, guid, _TRUNCATE);
+	char* type = agget(node, const_cast<char*>("element_type"));
+	errno_t err = mbstowcs_s(&rv, nullptr, 0, type, _TRUNCATE);
 
 	// 2. 변환할 wchar_t 배열 할당
 	wchar_t* wGuid = new wchar_t[rv];
 	// 3. 변환 수행
-	err = mbstowcs_s(&rv, wGuid, rv, guid, _TRUNCATE);
+	err = mbstowcs_s(&rv, wGuid, rv, type, _TRUNCATE);
 
 	// 노드 그리기
 	HWND hwnd = CreateWindowEx(0, L"NODECLASS", wGuid,

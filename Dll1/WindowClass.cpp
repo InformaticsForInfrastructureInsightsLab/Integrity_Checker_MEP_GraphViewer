@@ -422,7 +422,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
     {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        HBRUSH hBrush = CreateSolidBrush(RGB(255, 165, 0)); // 빨간색 원
+        HBRUSH hBrush = CreateSolidBrush(RGB(255, 165, 0)); // 주황 원
         SelectObject(hdc, hBrush);
 
         RECT client;
@@ -437,7 +437,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
         // 노드에 글자 쓰기
         Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        std::string name = agnameof(node);
+        std::string type = agget(node, const_cast<char*>("element_type"));
 
         int fontSize = static_cast<int>(min(radX*0.5, radY) * 0.5);
         SetBkMode(hdc, TRANSPARENT);
@@ -451,21 +451,21 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
         SIZE size;
 
-        GetTextExtentPoint32A(hdc, name.c_str(), name.length(), &size);
+        GetTextExtentPoint32A(hdc, type.c_str(), type.length(), &size);
         int text_x = centX - (size.cx / 2);
         int text_y = centY - (size.cy / 2);
-        TextOutA(hdc, text_x, text_y, name.c_str(), name.length());
+        TextOutA(hdc, text_x, text_y, type.c_str(), type.length());
 
         EndPaint(hwnd, &ps);
         break;
     }
     case WM_LBUTTONDOWN: {
         Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        std::string guid_str = agget(node, const_cast<char*>("guid"));
+        std::string type_str = agget(node, const_cast<char*>("element_type"));
         size_t wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, guid_str.c_str(), _TRUNCATE);
+        mbstowcs_s(&wideLen, nullptr, 0, type_str.c_str(), _TRUNCATE);
         LPWSTR guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, guid, wideLen, guid_str.c_str(), _TRUNCATE);
+        mbstowcs_s(&wideLen, guid, wideLen, type_str.c_str(), _TRUNCATE);
 
         g_guidExport(guid, guid);
         break;
