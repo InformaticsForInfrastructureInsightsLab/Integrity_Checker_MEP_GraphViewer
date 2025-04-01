@@ -117,14 +117,11 @@ private:
         DrawText(hdc, msg.Text().c_str(), -1, &outRect, DT_WORDBREAK | DT_CALCRECT);
         if (msg.IsMyChat()) {
             long box_width = outRect.right - outRect.left;
-            long box_height = outRect.bottom - outRect.top;
-            outRect.right = width - 10;
+            outRect.right = width - 10 - 20; // 10은 패딩, 20은 스크롤바 고려
             outRect.left = outRect.right - box_width;
-            outRect.top = yStart;
-            outRect.bottom = yStart + box_height;
         }
 
-        return outRect.bottom - yStart + 10;
+        return outRect.bottom - yStart + 20;
     }
 
     void DrawBalloon(HDC hdc, const RECT& r, const ChatMessage& text) {

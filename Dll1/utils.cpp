@@ -46,9 +46,6 @@ CallbackFunc g_callback = nullptr;
 GUIDExportFunc g_guidExport = nullptr;
 LPWSTR prevContext = nullptr;
 
-extern int totalHeight;
-extern int scrollPos;
-
 // 채팅 메시지를 패널에 추가
 void AddChatMessage(const std::wstring& message, bool isMine) {
 	auto* msg = new ChatMessage(message, isMine);

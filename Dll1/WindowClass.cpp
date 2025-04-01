@@ -13,9 +13,6 @@ extern MainWindow win;
 extern PanelWindow panel;
 extern ChatPanelWindow chatPanel;
 
-extern int totalHeight;
-extern int scrollPos;
-
 #pragma region MainWindow
 BOOL MainWindow::Create(PCWSTR lpWindowName,
     DWORD dwStyle, DWORD dwExStyle,
@@ -450,6 +447,12 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
         EndPaint(m_hwnd, &ps);
         break;
+    }    
+    case WM_DESTROY: {
+        scrollOffset = 0;
+        totalContentHeight = 0;
+        clientHeight = 0;
+        messages.clear();
     }
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
@@ -470,6 +473,7 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
     RegisterClass(&wc);
 
     width = nWidth;
+    height = nHeight;
 
     m_hwnd = CreateWindowEx(
         dwExStyle,
