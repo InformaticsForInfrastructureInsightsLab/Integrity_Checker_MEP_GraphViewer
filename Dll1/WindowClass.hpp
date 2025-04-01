@@ -1,6 +1,7 @@
 #pragma once
 #include <windows.h>
 #include "Graph.hpp"
+#include "Chat.h"
 
 template <class DERIVED_TYPE>
 class BaseWindow
@@ -92,9 +93,10 @@ public:
 
 class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
     int width, height;
-    std::vector<std::wstring> messages;
+    std::vector<ChatMessage> messages;
+    int box_max_width;
 public:
-    ChatPanelWindow() : width(0), height(0) { }
+    ChatPanelWindow() : width(0), height(0), box_max_width(400) { }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     PCWSTR ClassName() const { return L"ChatWindowPanel"; }
@@ -110,16 +112,25 @@ public:
     );
 
 private:
-    int AddMessageAndMeasure(HDC hdc, const std::wstring& msg, int maxWidth, RECT& outRect, int yStart) {
+    int AddMessageAndMeasure(HDC hdc, const ChatMessage& msg, int maxWidth, RECT& outRect, int yStart) {
         outRect = { 10, yStart, 20 + maxWidth, yStart };
-        DrawText(hdc, msg.c_str(), -1, &outRect, DT_WORDBREAK | DT_CALCRECT);
+        DrawText(hdc, msg.Text().c_str(), -1, &outRect, DT_WORDBREAK | DT_CALCRECT);
+        if (msg.IsMyChat()) {
+            long box_width = outRect.right - outRect.left;
+            long box_height = outRect.bottom - outRect.top;
+            outRect.right = width - 10;
+            outRect.left = outRect.right - box_width;
+            outRect.top = yStart;
+            outRect.bottom = yStart + box_height;
+        }
+
         return outRect.bottom - yStart + 10;
     }
 
-    void DrawBalloon(HDC hdc, const RECT& r, const std::wstring& text) {
+    void DrawBalloon(HDC hdc, const RECT& r, const ChatMessage& text) {
         int radius = 12;
 
-        HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235));
+        HBRUSH hBrush = CreateSolidBrush(text.IsMyChat() ?  RGB(135, 206, 235) : RGB(211,211,211));
         HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
         HPEN hOldPen = (HPEN)SelectObject(hdc, GetStockObject(NULL_PEN));
 
@@ -131,7 +142,7 @@ private:
 
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(0, 0, 0));
-        DrawText(hdc, text.c_str(), -1, const_cast<RECT*>(&r), DT_WORDBREAK | DT_LEFT | DT_TOP);
+        DrawText(hdc, text.Text().c_str(), -1, const_cast<RECT*>(&r), DT_WORDBREAK | DT_LEFT | DT_TOP);
     }
 
 };

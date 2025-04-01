@@ -50,9 +50,9 @@ extern int totalHeight;
 extern int scrollPos;
 
 // 채팅 메시지를 패널에 추가
-void AddChatMessage(const std::wstring& message) {
-	auto* copied_msg = new std::wstring(message);
-	PostMessage(chatPanel.m_hwnd, WM_UPDATE_CHAT, NULL, reinterpret_cast<LPARAM>(copied_msg));
+void AddChatMessage(const std::wstring& message, bool isMine) {
+	auto* msg = new ChatMessage(message, isMine);
+	PostMessage(chatPanel.m_hwnd, WM_UPDATE_CHAT, NULL, reinterpret_cast<LPARAM>(msg));
 }
 
 extern "C" {
@@ -70,7 +70,7 @@ extern "C" {
 		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
 
-		AddChatMessage(text);
+		AddChatMessage(text, true);
 
 		SetWindowText(win.hEdit, L" ");
 		return text;
@@ -82,7 +82,7 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-		AddChatMessage(result);
+		AddChatMessage(result, false);
 		try {
 			prevContext = context;
 			std::string json = LpwstrToString(context);

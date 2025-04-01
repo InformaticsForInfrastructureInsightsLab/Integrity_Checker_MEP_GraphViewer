@@ -13,8 +13,6 @@ extern MainWindow win;
 extern PanelWindow panel;
 extern ChatPanelWindow chatPanel;
 
-extern std::vector<std::wstring> messages;
-
 extern int totalHeight;
 extern int scrollPos;
 
@@ -371,13 +369,13 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
     switch (uMsg) {
     case WM_UPDATE_CHAT: {
-        std::wstring* Pmsg = reinterpret_cast<std::wstring*>(lParam);
+        ChatMessage* Pmsg = reinterpret_cast<ChatMessage*>(lParam);
         messages.push_back(*Pmsg);
         delete Pmsg;
 
         HDC hdc = GetDC(m_hwnd);
         RECT r;
-        int newMsgHeight = AddMessageAndMeasure(hdc, messages.back(), width, r, totalContentHeight);
+        int newMsgHeight = AddMessageAndMeasure(hdc, messages.back(), box_max_width, r, totalContentHeight);
         ReleaseDC(m_hwnd, hdc);
 
         // 기존 내용 위로 스크롤
@@ -445,7 +443,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
         for (const auto& msg : messages) {
             RECT r;
-            int h = AddMessageAndMeasure(hdc, msg, 400, r, y);
+            int h = AddMessageAndMeasure(hdc, msg, box_max_width, r, y);
             DrawBalloon(hdc, r, msg);
             y += h + 10;
         }
@@ -470,6 +468,8 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
     wc.hInstance = GetModuleHandle(NULL);
     wc.lpszClassName = ClassName();
     RegisterClass(&wc);
+
+    width = nWidth;
 
     m_hwnd = CreateWindowEx(
         dwExStyle,

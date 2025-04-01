@@ -2,6 +2,13 @@
 #include <string>
 
 struct ChatMessage {
-	std::string text;
-	bool isMyMessage;
+private:
+	std::wstring text;
+	bool IsMyMessage;
+
+public:
+	ChatMessage(std::wstring msg, bool isMine) : text(msg), IsMyMessage(isMine) { }
+
+	std::wstring Text() const { return text; }
+	bool IsMyChat() const { return IsMyMessage; }
 };
