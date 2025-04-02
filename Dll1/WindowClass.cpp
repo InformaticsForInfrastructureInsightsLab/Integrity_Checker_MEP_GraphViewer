@@ -251,6 +251,8 @@ void MainWindow::AddItems(nlohmann::json context) {
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static float scale = 0.7f;
     static Graph* graph = nullptr;
+    static bool isDragging = false;
+    static POINT lastMousePos = { 0,0 };
 
     switch (uMsg) {
     case WM_CREATE: {
@@ -322,6 +324,34 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
     }
+    case WM_LBUTTONDOWN: {
+        SetCapture(m_hwnd);
+        isDragging = true;
+        lastMousePos.x = GET_X_LPARAM(lParam);
+        lastMousePos.y = GET_Y_LPARAM(lParam);
+        break;
+    }
+    case WM_MOUSEMOVE:
+        if (isDragging) {
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+
+            int dx = x - lastMousePos.x;
+            int dy = y - lastMousePos.y;
+
+            offsetX += dx; 
+            offsetY += dy;
+
+            lastMousePos.x = x;
+            lastMousePos.y = y;
+
+            InvalidateRect(m_hwnd, NULL, TRUE);
+        }
+        break;
+    case WM_LBUTTONUP:
+        ReleaseCapture();
+        isDragging = false;
+        break;
     case WM_DESTROY:
         if (graph) {
             graph->Release();
