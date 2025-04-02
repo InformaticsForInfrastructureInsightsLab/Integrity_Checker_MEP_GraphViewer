@@ -66,7 +66,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
+            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_BORDER, 0,
             10, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
@@ -254,6 +254,9 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static bool isDragging = false;
     static POINT lastMousePos = { 0,0 };
 
+    static bool isNewGraph = true;
+    static int dx, dy;
+
     switch (uMsg) {
     case WM_CREATE: {
         // register node class
@@ -277,6 +280,10 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         graph = reinterpret_cast<Graph*>(lParam);
         RECT wnd_sz = { 0,0,width, height };
+        offsetX = 0; 
+        offsetY = 0;
+        scale = 0.7f;
+        isNewGraph = true;
         InvalidateRect(m_hwnd, &wnd_sz, true);        
         break;
     }
@@ -292,8 +299,29 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 배경을 흰색으로 지움
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
-        if (graph)
-            graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        if (isNewGraph) {
+            if (graph)
+                graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+            isNewGraph = false;
+        }
+        else {
+            EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
+                RECT r;
+                GetWindowRect(hwnd, &r);
+                MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&r, 2);
+
+                int width = r.right - r.left;
+                int height = r.bottom - r.top;
+
+                int newX = static_cast<int>(r.left + dx);
+                int newY = static_cast<int>(r.top + dy);
+
+                if (width > 0 && height > 0)
+                    MoveWindow(hwnd, newX, newY, width, height, TRUE);
+
+                return TRUE;
+                }, 0);
+        }
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 
@@ -321,7 +349,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 커스텀 이벤트로 원 다시 그리기 요청
         RECT wnd_sz = { 0,0,width, height };
-        InvalidateRect(m_hwnd, &wnd_sz, true);
+        InvalidateRect(m_hwnd, &wnd_sz, false);
         break;
     }
     case WM_LBUTTONDOWN: {
@@ -336,8 +364,8 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             int x = GET_X_LPARAM(lParam);
             int y = GET_Y_LPARAM(lParam);
 
-            int dx = x - lastMousePos.x;
-            int dy = y - lastMousePos.y;
+            dx = x - lastMousePos.x;
+            dy = y - lastMousePos.y;
 
             offsetX += dx; 
             offsetY += dy;
@@ -345,7 +373,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             lastMousePos.x = x;
             lastMousePos.y = y;
 
-            InvalidateRect(m_hwnd, NULL, TRUE);
+            InvalidateRect(m_hwnd, NULL, false);
         }
         break;
     case WM_LBUTTONUP:
