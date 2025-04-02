@@ -259,6 +259,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         wc.lpfnWndProc = CircleWindow::NodeProc;
         wc.hInstance = GetModuleHandle(NULL);
         wc.lpszClassName = L"NODECLASS";
+        wc.hbrBackground = CreateSolidBrush(RGB(135, 206, 235));
         RegisterClass(&wc);
 
         WNDCLASS wc_line = {};
@@ -511,11 +512,6 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
     }
     case WM_PAINT:
     {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        HBRUSH hBrush = CreateSolidBrush(RGB(255, 165, 0)); // 주황 원
-        SelectObject(hdc, hBrush);
-
         RECT client;
         GetClientRect(hwnd, &client);
         int centX = (client.right + client.left) / 2;
@@ -523,8 +519,8 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         int radX = (client.right - client.left) / 2;
         int radY = (client.bottom - client.top) / 2;
 
-        Ellipse(hdc, centX - radX, centY - radY, centX + radX, centY + radY);
-        DeleteObject(hBrush);
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
 
         // 노드에 글자 쓰기
         Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));

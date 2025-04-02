@@ -157,10 +157,12 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 	// 3. 변환 수행
 	err = mbstowcs_s(&rv, wGuid, rv, type, _TRUNCATE);
 
+	int rad = max(rx, ry) / 2;
+
 	// 노드 그리기
 	HWND hwnd = CreateWindowEx(0, L"NODECLASS", wGuid,
 		WS_CHILD | WS_VISIBLE,
-		x - rx, y - ry, 2 * rx, 2 * ry,
+		x - rad, y - rad, 2 * rad, 2 * rad,
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
 	);
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(node));
