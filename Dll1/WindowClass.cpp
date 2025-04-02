@@ -78,6 +78,11 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
         break;    
+    case WM_SIZE: {
+        int width = LOWORD(lParam);
+        int height = HIWORD(lParam);
+        break;
+    }        
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
@@ -362,7 +367,6 @@ BOOL PanelWindow::Create(PCWSTR lpWindowName,
 LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static int scrollOffset = 0;
     static int totalContentHeight = 0;
-    static int clientHeight = 0;
 
     switch (uMsg) {
     case WM_UPDATE_CHAT: {
@@ -377,9 +381,9 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
         // 기존 내용 위로 스크롤
         ScrollWindowEx(m_hwnd, 0, -newMsgHeight, NULL, NULL, NULL, NULL, SW_INVALIDATE);
-        totalContentHeight += newMsgHeight;
+        totalContentHeight += newMsgHeight + 10;
 
-        scrollOffset = max(0, totalContentHeight - clientHeight);
+        scrollOffset = max(0, totalContentHeight - height);
         SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
 
@@ -387,22 +391,22 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
         si.nMin = 0;
         si.nMax = totalContentHeight;
-        si.nPage = clientHeight;
+        si.nPage = height;
         si.nPos = scrollOffset;
         SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
 
         // 하단 새 메시지 영역만 다시 그림
-        RECT invalidRect = { 0, clientHeight - newMsgHeight, width + 40, clientHeight };
+        RECT invalidRect = { 0, height - newMsgHeight, width, height };
         InvalidateRect(m_hwnd, &invalidRect, TRUE);
         break;
     }    
     case WM_SIZE:
-        clientHeight = HIWORD(lParam);
+        height = HIWORD(lParam);
         {
             SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
             si.nMin = 0;
             si.nMax = totalContentHeight;
-            si.nPage = clientHeight;
+            si.nPage = height;
             si.nPos = scrollOffset;
             SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
         }
@@ -418,7 +422,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         case SB_THUMBTRACK: pos = HIWORD(wParam); break;
         }
 
-        pos = max(0, min(pos, totalContentHeight - clientHeight));
+        pos = max(0, min(pos, totalContentHeight - height));
         if (pos != scrollOffset) {
             scrollOffset = pos;
             SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
@@ -451,8 +455,8 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
     case WM_DESTROY: {
         scrollOffset = 0;
         totalContentHeight = 0;
-        clientHeight = 0;
         messages.clear();
+        break;
     }
     default:
         return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
