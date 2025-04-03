@@ -106,16 +106,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * panel.width * scaleFactor + offsetX);
 			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * panel.height * scaleFactor + offsetY);
 
-			if (x_s > x_e) {
-				int temp = x_s;
-				x_s = x_e;
-				x_e = temp;
-
-				temp = y_s;
-				y_s = y_e;
-				y_e = temp;
-			}
-
 			// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
 			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (panel.width / width) / 2);
 			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (panel.height / height) / 2);
@@ -124,8 +114,8 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
 			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
-				DrawLine(edge, x_s, y_s, x_e, y_e);
-				visitedEdges.insert(edgeKey);				
+/*				DrawLine(edge, x_s, y_s, x_e, y_e);
+				visitedEdges.insert(edgeKey);*/				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
 				DrawNode(start, x_s, y_s, r_xs, r_ys);
@@ -162,7 +152,7 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 }
 
 void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
-	int thickness = 3;
+	int thickness = 5;
 
 	int anchor_x = x1 < x2 ? x1 : x2;
 	int anchor_y = y1 < y2 ? y1 : y2;
