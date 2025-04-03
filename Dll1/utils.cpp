@@ -5,6 +5,7 @@
 
 extern MainWindow win;
 extern PanelWindow panel;
+extern ChatPanelWindow chatPanel;
 
 std::string LpwstrToString(LPWSTR str) {
 	// 변환에 필요한 버퍼 크기 계산
@@ -45,7 +46,11 @@ CallbackFunc g_callback = nullptr;
 GUIDExportFunc g_guidExport = nullptr;
 LPWSTR prevContext = nullptr;
 
-std::vector<ChatMessage> messages;
+// 채팅 메시지를 패널에 추가
+void AddChatMessage(const std::wstring& message, bool isMine) {
+	auto* msg = new ChatMessage(message, isMine);
+	PostMessage(chatPanel.m_hwnd, WM_UPDATE_CHAT, NULL, reinterpret_cast<LPARAM>(msg));
+}
 
 extern "C" {
 	// 콜백 등록 함수
@@ -61,10 +66,9 @@ extern "C" {
 	__declspec(dllexport) LPCWSTR ForwardQuestion() {
 		WCHAR text[4096];
 		GetWindowText(win.hEdit, text, sizeof(text) / sizeof(WCHAR));
-		std::string my_chat = LpwstrToString(text);
-		messages.push_back({ my_chat, true });
-		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)StringToLpwstr(my_chat));
-		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
+
+		AddChatMessage(text, true);
+
 		SetWindowText(win.hEdit, L" ");
 		return text;
 	}
@@ -75,10 +79,7 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context) {
-		messages.push_back({ LpwstrToString(result), false });
-		SendMessage(win.hAnswer, LB_ADDSTRING, 0, (LPARAM)result);
-		SendMessage(win.hAnswer, LB_SETTOPINDEX, messages.size() - 1, 0);
-
+		AddChatMessage(result, false);
 		try {
 			prevContext = context;
 			std::string json = LpwstrToString(context);

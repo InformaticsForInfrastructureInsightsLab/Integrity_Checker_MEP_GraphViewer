@@ -5,14 +5,6 @@
 #include "WindowClass.hpp"
 extern PanelWindow panel;
 
-namespace detail {
-	struct EdgeHash {
-		size_t operator()(const std::pair<Agnode_t*, Agnode_t*>& edge) const {
-			return std::hash<void*>()(edge.first) ^ std::hash<void*>()(edge.second);
-		}
-	};
-}
-
 Graph::Graph(nlohmann::json json) {
 	for (auto& clash : json) {
 		node_map[clash["m"]["properties"]["GUID"]] = std::make_unique<node>(clash["m"]["properties"]);
@@ -35,10 +27,10 @@ void Graph::buildGraph() {
 		node* start_node = node_map[clash->start_node].get();
 		node* end_node = node_map[clash->end_node].get();
 
-		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->ElementType.c_str()), TRUE);
-		agsafeset(n1, const_cast<char*>("guid"), const_cast<char*>(start_node->GUID.c_str()), const_cast<char*>("default_value"));
-		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->ElementType.c_str()), TRUE);
-		agsafeset(n2, const_cast<char*>("guid"), const_cast<char*>(end_node->GUID.c_str()), const_cast<char*>("default_value"));
+		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->GUID.c_str()), TRUE);
+		agsafeset(n1, const_cast<char*>("element_type"), const_cast<char*>(start_node->ElementType.c_str()), const_cast<char*>("default_value"));
+		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->GUID.c_str()), TRUE);
+		agsafeset(n2, const_cast<char*>("element_type"), const_cast<char*>(end_node->ElementType.c_str()), const_cast<char*>("default_value"));
 
 		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
 		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용
@@ -98,11 +90,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			Agnode_t* end = agtail(edge);
 			std::pair<Agnode_t*, Agnode_t*> edgeKey = { min(start, end), max(start, end) };
 
-			if (visitedEdges.find(edgeKey) != visitedEdges.end()) {
-				continue;
-			}
-			visitedEdges.insert(edgeKey);
-
 			if (!start) {
 				MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
 			}
@@ -114,10 +101,10 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			pointf coord_e = ND_coord(end);
 
 			// 중점의 x,y좌표
-			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * 950 * scaleFactor + offsetX);
-			int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * 340 * scaleFactor + offsetY);
-			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * 950 * scaleFactor + offsetX);
-			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * 340 * scaleFactor + offsetY);
+			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * panel.width * scaleFactor + offsetX);
+			int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * panel.height * scaleFactor + offsetY);
+			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * panel.width * scaleFactor + offsetX);
+			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * panel.height * scaleFactor + offsetY);
 
 			if (x_s > x_e) {
 				int temp = x_s;
@@ -130,17 +117,16 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			}
 
 			// 인치 단위를 픽셀단위로 변환하기 위해 72를 곱함	
-			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (950 / width) / 2);
-			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (340 / height) / 2);
-			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (950 / width) / 2);
-			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (340 / height) / 2);
-
-			std::string node_name_start = agnameof(start);
-			std::string node_name_end = agnameof(end);
-
+			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (panel.width / width) / 2);
+			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (panel.height / height) / 2);
+			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (panel.width / width) / 2);
+			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (panel.height / height) / 2);
 
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
-			DrawLine(edge, x_s, y_s, x_e, y_e);
+			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
+				DrawLine(edge, x_s, y_s, x_e, y_e);
+				visitedEdges.insert(edgeKey);				
+			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
 				DrawNode(start, x_s, y_s, r_xs, r_ys);
 				visitedNodes.insert(start);
@@ -155,21 +141,24 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 	size_t rv;
-	char* guid = agget(node, const_cast<char*>("guid"));
-	errno_t err = mbstowcs_s(&rv, nullptr, 0, guid, _TRUNCATE);
+	char* type = agget(node, const_cast<char*>("element_type"));
+	errno_t err = mbstowcs_s(&rv, nullptr, 0, type, _TRUNCATE);
 
 	// 2. 변환할 wchar_t 배열 할당
 	wchar_t* wGuid = new wchar_t[rv];
 	// 3. 변환 수행
-	err = mbstowcs_s(&rv, wGuid, rv, guid, _TRUNCATE);
+	err = mbstowcs_s(&rv, wGuid, rv, type, _TRUNCATE);
+	int rad = max(rx, ry) / 2;
 
 	// 노드 그리기
 	HWND hwnd = CreateWindowEx(0, L"NODECLASS", wGuid,
 		WS_CHILD | WS_VISIBLE,
-		x - rx, y - ry, 2 * rx, 2 * ry,
+		x - rad, y - rad, 2 * rad, 2 * rad,
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
 	);
-	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(node));
+
+	detail::NodeInfo* ni = new detail::NodeInfo{ node, x,y,rad };
+	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ni));
 }
 
 void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {

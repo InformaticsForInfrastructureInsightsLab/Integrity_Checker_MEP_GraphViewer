@@ -1,6 +1,8 @@
 #pragma once
 #include <windows.h>
+#include <windowsx.h>
 #include "Graph.hpp"
+#include "Chat.h"
 
 template <class DERIVED_TYPE>
 class BaseWindow
@@ -90,15 +92,68 @@ public:
     );
 };
 
+class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
+    int width, height;
+    std::vector<ChatMessage> messages;
+    int box_max_width;
+public:
+    ChatPanelWindow() : width(0), height(0), box_max_width(400) { }
+
+    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    PCWSTR ClassName() const { return L"ChatWindowPanel"; }
+
+    BOOL Create(PCWSTR lpWindowName,
+        DWORD dwStyle, DWORD dwExStyle = 0,
+        int x = CW_USEDEFAULT,
+        int y = CW_USEDEFAULT,
+        int nWidth = CW_USEDEFAULT,
+        int nHeight = CW_USEDEFAULT,
+        HWND hWndParent = 0,
+        HMENU hMenu = 0
+    );
+
+private:
+    int AddMessageAndMeasure(HDC hdc, const ChatMessage& msg, int maxWidth, RECT& outRect, int yStart) {
+        outRect = { 10, yStart, 20 + maxWidth, yStart };
+        DrawText(hdc, msg.Text().c_str(), -1, &outRect, DT_WORDBREAK | DT_CALCRECT);
+        if (msg.IsMyChat()) {
+            long box_width = outRect.right - outRect.left;
+            outRect.right = width - 10 - 20; // 10은 패딩, 20은 스크롤바 고려
+            outRect.left = outRect.right - box_width;
+        }
+
+        return outRect.bottom - yStart + 20;
+    }
+
+    void DrawBalloon(HDC hdc, const RECT& r, const ChatMessage& text) {
+        int radius = 12;
+
+        HBRUSH hBrush = CreateSolidBrush(text.IsMyChat() ?  RGB(135, 206, 235) : RGB(211,211,211));
+        HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+        HPEN hOldPen = (HPEN)SelectObject(hdc, GetStockObject(NULL_PEN));
+
+        RoundRect(hdc, r.left - 10, r.top - 5, r.right + 10, r.bottom + 5, radius, radius);
+
+        SelectObject(hdc, hOldBrush);
+        DeleteObject(hBrush);
+        SelectObject(hdc, hOldPen);
+
+        SetBkMode(hdc, TRANSPARENT);
+        SetTextColor(hdc, RGB(0, 0, 0));
+        DrawText(hdc, text.Text().c_str(), -1, const_cast<RECT*>(&r), DT_WORDBREAK | DT_LEFT | DT_TOP);
+    }
+
+};
+
 class MainWindow : public BaseWindow<MainWindow> {
 public:
-    HWND hEdit, hButton, hAnswer;
+    HWND hEdit, hButton, hScroll;
     HWND hListView;
 public:
     MainWindow() {
         hEdit = nullptr;
         hButton = nullptr;
-        hAnswer = nullptr;
+        hScroll = nullptr;
         hListView = nullptr;
     }
 
