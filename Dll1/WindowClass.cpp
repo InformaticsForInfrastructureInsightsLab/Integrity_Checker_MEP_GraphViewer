@@ -40,7 +40,7 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_CREATE:
+    case WM_CREATE: 
         // 입력 칸 (Edit Control) 생성
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
@@ -76,10 +76,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             10, 350, 930, 140, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
-        break;
-    
-        }
-        break;    
+        break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
