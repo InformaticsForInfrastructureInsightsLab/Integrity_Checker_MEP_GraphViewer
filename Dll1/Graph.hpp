@@ -15,6 +15,22 @@
 #define GVDLL
 #include <graphviz/gvc.h>
 
+namespace detail {
+	struct EdgeHash {
+		size_t operator()(const std::pair<Agnode_t*, Agnode_t*>& edge) const {
+			return std::hash<void*>()(edge.first) ^ std::hash<void*>()(edge.second);
+		}
+	};
+
+	struct NodeInfo {
+		Agnode_t* node;
+		int logicX;
+		int logicY;
+		int logicRad;
+	};
+}
+
+
 struct node {
 	std::string ElementType;
 	std::string Category;

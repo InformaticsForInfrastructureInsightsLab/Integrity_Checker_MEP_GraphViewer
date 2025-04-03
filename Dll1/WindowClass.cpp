@@ -301,26 +301,26 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         if (isNewGraph) {
             if (graph)
-                graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+                graph->RenderGraph(hMemDC, 1, offsetX, offsetY);
             isNewGraph = false;
         }
         else {
             EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-                RECT r;
-                GetWindowRect(hwnd, &r);
-                MapWindowPoints(HWND_DESKTOP, GetParent(hwnd), (LPPOINT)&r, 2);
+                PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
+                detail::NodeInfo* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+                
+                if (!node) {
+                    MessageBox(hwnd, L"pos is null!", L" ", MB_OK);
+                    return true;
+                }
+                int x = node->logicX * scale + pThis->offsetX;
+                int y = node->logicY * scale + pThis->offsetY;
+                int rad = node->logicRad * scale;
 
-                int width = r.right - r.left;
-                int height = r.bottom - r.top;
-
-                int newX = static_cast<int>(r.left + dx);
-                int newY = static_cast<int>(r.top + dy);
-
-                if (width > 0 && height > 0)
-                    MoveWindow(hwnd, newX, newY, width, height, TRUE);
+                MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
 
                 return TRUE;
-                }, 0);
+                }, (LPARAM)this);
         }
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
@@ -581,7 +581,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         HDC hdc = BeginPaint(hwnd, &ps);
 
         // 노드에 글자 쓰기
-        Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
         std::string type = agget(node, const_cast<char*>("element_type"));
 
         int fontSize = static_cast<int>(min(radX*0.5, radY) * 0.5);
@@ -605,7 +605,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         break;
     }
     case WM_LBUTTONDOWN: {
-        Agnode_t* node = reinterpret_cast<Agnode_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
         std::string type_str = agget(node, const_cast<char*>("element_type"));
         size_t wideLen = 0;
         mbstowcs_s(&wideLen, nullptr, 0, type_str.c_str(), _TRUNCATE);
@@ -613,6 +613,12 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         mbstowcs_s(&wideLen, guid, wideLen, type_str.c_str(), _TRUNCATE);
 
         g_guidExport(guid, guid);
+        break;
+    }
+    
+    case WM_DESTROY: {
+        auto* user_data = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        delete user_data;
         break;
     }
     default:
