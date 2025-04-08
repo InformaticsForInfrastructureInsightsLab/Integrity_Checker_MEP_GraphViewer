@@ -306,9 +306,9 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         else {
             EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-                //wchar_t windowClass[20];
-                //GetClassName(hwnd, windowClass, 20);
-                //if (windowClass == L"LINECLASS") return true;
+                wchar_t windowClass[20];
+                GetClassName(hwnd, windowClass, 20);
+                if (windowClass == L"LINECLASS") return true;
 
                 PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
                 detail::NodeInfo* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
