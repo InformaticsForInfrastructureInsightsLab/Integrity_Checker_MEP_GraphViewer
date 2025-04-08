@@ -270,6 +270,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         wc_line.lpfnWndProc = LineWindow::LineProc;
         wc_line.hInstance = GetModuleHandle(NULL);
         wc_line.lpszClassName = L"LINECLASS";
+        wc_line.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
         RegisterClass(&wc_line);
     } break;
     case WM_UPDATE_GRAPH: {
@@ -305,13 +306,13 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         else {
             EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
+                //wchar_t windowClass[20];
+                //GetClassName(hwnd, windowClass, 20);
+                //if (windowClass == L"LINECLASS") return true;
+
                 PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
                 detail::NodeInfo* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-                
-                if (!node) {
-                    MessageBox(hwnd, L"pos is null!", L" ", MB_OK);
-                    return true;
-                }
+
                 int x = node->logicX * scale + pThis->offsetX;
                 int y = node->logicY * scale + pThis->offsetY;
                 int rad = node->logicRad * scale;
@@ -638,13 +639,13 @@ LRESULT CALLBACK LineWindow::LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
         Agnode_t* start = aghead(edge);
         Agnode_t* end = agtail(edge);
 
-        std::string start_guid_str = agget(start, const_cast<char*>("guid"));
+        std::string start_guid_str = agnameof(start);
         size_t wideLen = 0;
         mbstowcs_s(&wideLen, nullptr, 0, start_guid_str.c_str(), _TRUNCATE);
         LPWSTR start_guid = new WCHAR[wideLen];
         mbstowcs_s(&wideLen, start_guid, wideLen, start_guid_str.c_str(), _TRUNCATE);
 
-        std::string end_guid_str = agget(end, const_cast<char*>("guid"));
+        std::string end_guid_str = agnameof(end);
         wideLen = 0;
         mbstowcs_s(&wideLen, nullptr, 0, end_guid_str.c_str(), _TRUNCATE);
         LPWSTR end_guid = new WCHAR[wideLen];

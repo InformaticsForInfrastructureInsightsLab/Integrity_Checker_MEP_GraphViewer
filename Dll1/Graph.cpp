@@ -114,8 +114,8 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
 			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
-				/*DrawLine(edge, x_s, y_s, x_e, y_e);
-				visitedEdges.insert(edgeKey);		*/		
+/*				DrawLine(edge, x_s, y_s, x_e, y_e);
+				visitedEdges.insert(edgeKey);*/				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
 				DrawNode(start, x_s, y_s, r_xs, r_ys);
