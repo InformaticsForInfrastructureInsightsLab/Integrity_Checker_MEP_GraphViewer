@@ -318,6 +318,11 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 int rad = node->logicRad * scale;
 
                 MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
+                RECT r;
+                GetClientRect(hwnd, &r);
+                HRGN hRgn = CreateEllipticRgn(0, 0, (r.right - r.left), (r.bottom - r.top));
+                SetWindowRgn(hwnd, hRgn, TRUE);
+                DeleteObject(hRgn);
 
                 return TRUE;
                 }, (LPARAM)this);
@@ -331,6 +336,12 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         DeleteDC(hMemDC);
 
         EndPaint(m_hwnd, &ps);
+        break;
+    }
+    case WM_ERASEBKGND: {
+        RECT rect;
+        GetClientRect(m_hwnd, &rect);
+        FillRect((HDC)wParam, &rect, (HBRUSH)(COLOR_WINDOW + 1));
         break;
     }
     case WM_MOUSEWHEEL: {
@@ -349,7 +360,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 커스텀 이벤트로 원 다시 그리기 요청
         RECT wnd_sz = { 0,0,width, height };
-        InvalidateRect(m_hwnd, &wnd_sz, false);
+        InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
     }
     case WM_LBUTTONDOWN: {
@@ -373,7 +384,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             lastMousePos.x = x;
             lastMousePos.y = y;
 
-            InvalidateRect(m_hwnd, NULL, false);
+            InvalidateRect(m_hwnd, NULL, true);
         }
         break;
     case WM_LBUTTONUP:
@@ -559,11 +570,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
     case WM_CREATE: {
         RECT client;
         GetClientRect(hwnd, &client);
-        int centX = (client.right + client.left) / 2;
-        int centY = (client.bottom + client.top) / 2;
-        int radX = (client.right - client.left) / 2;
-        int radY = (client.bottom - client.top) / 2;
-        HRGN hRgn = CreateEllipticRgn(centX - radX, centY - radY, centX + radX, centY + radY);
+        HRGN hRgn = CreateEllipticRgn(0, 0, (client.right - client.left), (client.bottom - client.top));
         SetWindowRgn(hwnd, hRgn, TRUE);
         DeleteObject(hRgn);
         break;
@@ -584,7 +591,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
         std::string type = agget(node, const_cast<char*>("element_type"));
 
-        int fontSize = static_cast<int>(min(radX*0.5, radY) * 0.5);
+        int fontSize = static_cast<int>(radX * 0.5);
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(0, 0, 0));
 
@@ -602,6 +609,12 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         TextOutA(hdc, text_x, text_y, type.c_str(), type.length());
 
         EndPaint(hwnd, &ps);
+        break;
+    }
+    case WM_ERASEBKGND: {
+        RECT rect;
+        GetClientRect(hwnd, &rect);
+        FillRect((HDC)wParam, &rect, (HBRUSH)(GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND)));
         break;
     }
     case WM_LBUTTONDOWN: {

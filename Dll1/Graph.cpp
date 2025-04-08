@@ -152,7 +152,7 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 }
 
 void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
-	int thickness = 3;
+	int thickness = 5;
 
 	int anchor_x = x1 < x2 ? x1 : x2;
 	int anchor_y = y1 < y2 ? y1 : y2;
