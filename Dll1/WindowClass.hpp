@@ -90,6 +90,26 @@ public:
         HWND hWndParent = 0,
         HMENU hMenu = 0
     );
+
+private:
+    void MoveNode(HWND hwnd, detail::NodeInfo* node, PanelWindow* pThis, float scale) {
+        int x = node->logicX * scale + pThis->offsetX;
+        int y = node->logicY * scale + pThis->offsetY;
+        int rad = node->logicRad * scale;
+
+        std::wstring x_str = std::to_wstring(x)+L" " + std::to_wstring(y)+L" "+std::to_wstring(rad);
+
+        MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
+        RECT r;
+        GetClientRect(hwnd, &r);
+        HRGN hRgn = CreateEllipticRgn(0, 0, (r.right - r.left), (r.bottom - r.top));
+        SetWindowRgn(hwnd, hRgn, TRUE);
+        DeleteObject(hRgn);
+    }
+
+    void MoveEdge(HWND hwnd, detail::EdgeInfo* node, PanelWindow* pThis, int scale) {
+
+    }
 };
 
 class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
@@ -142,7 +162,6 @@ private:
         SetTextColor(hdc, RGB(0, 0, 0));
         DrawText(hdc, text.Text().c_str(), -1, const_cast<RECT*>(&r), DT_WORDBREAK | DT_LEFT | DT_TOP);
     }
-
 };
 
 class MainWindow : public BaseWindow<MainWindow> {

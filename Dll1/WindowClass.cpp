@@ -248,7 +248,7 @@ void MainWindow::AddItems(nlohmann::json context) {
 
 #pragma region PanelWindow
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static float scale = 0.7f;
+    static float scale = 1.0f;
     static Graph* graph = nullptr;
     static bool isDragging = false;
     static POINT lastMousePos = { 0,0 };
@@ -282,7 +282,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         RECT wnd_sz = { 0,0,width, height };
         offsetX = 0; 
         offsetY = 0;
-        scale = 0.7f;
+        scale = 1.0f;
         isNewGraph = true;
         InvalidateRect(m_hwnd, &wnd_sz, true);        
         break;
@@ -306,26 +306,21 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         else {
             EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-                wchar_t windowClass[20];
-                GetClassName(hwnd, windowClass, 20);
-                if (windowClass == L"LINECLASS") return true;
-
                 PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
-                detail::NodeInfo* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+                auto* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+                
+                if (node) {
+                    pThis->MoveNode(hwnd, node, pThis, scale);
+                }
+                else {
+                    auto* node = reinterpret_cast<detail::EdgeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+                    if (node) {
 
-                int x = node->logicX * scale + pThis->offsetX;
-                int y = node->logicY * scale + pThis->offsetY;
-                int rad = node->logicRad * scale;
-
-                MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
-                RECT r;
-                GetClientRect(hwnd, &r);
-                HRGN hRgn = CreateEllipticRgn(0, 0, (r.right - r.left), (r.bottom - r.top));
-                SetWindowRgn(hwnd, hRgn, TRUE);
-                DeleteObject(hRgn);
+                    }
+                }
 
                 return TRUE;
-                }, (LPARAM)this);
+            }, (LPARAM)this);
         }
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
@@ -648,9 +643,9 @@ LRESULT CALLBACK LineWindow::LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
     switch (uMsg)
     {
     case WM_LBUTTONDOWN: {
-        Agedge_t* edge = reinterpret_cast<Agedge_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        Agnode_t* start = aghead(edge);
-        Agnode_t* end = agtail(edge);
+        detail::EdgeInfo* ei = reinterpret_cast<detail::EdgeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        Agnode_t* start = aghead(ei->edge);
+        Agnode_t* end = agtail(ei->edge);
 
         std::string start_guid_str = agnameof(start);
         size_t wideLen = 0;

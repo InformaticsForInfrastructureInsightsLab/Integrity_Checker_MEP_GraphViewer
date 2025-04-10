@@ -22,11 +22,26 @@ namespace detail {
 		}
 	};
 
-	struct NodeInfo {
+	struct InfoBase {
+		enum class Type { Node, Edge } type;
+		virtual ~InfoBase() = default;
+	};
+
+	struct NodeInfo : InfoBase {
 		Agnode_t* node;
 		int logicX;
 		int logicY;
 		int logicRad;
+		NodeInfo() { type = Type::Node; }
+	};
+
+	struct EdgeInfo : InfoBase {
+		Agedge_t* edge;
+		int logicX;
+		int logicY;
+		int len;
+		int height;
+		EdgeInfo() { type = Type::Edge; }
 	};
 }
 
