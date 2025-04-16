@@ -37,10 +37,10 @@ namespace detail {
 
 	struct EdgeInfo : InfoBase {
 		Agedge_t* edge;
-		int logicX;
-		int logicY;
-		int len;
-		int height;
+		int start_logicX;
+		int start_logicY;
+		int end_logicX;
+		int end_logicY;
 		EdgeInfo() { type = Type::Edge; }
 	};
 }

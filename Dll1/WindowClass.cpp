@@ -299,29 +299,28 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 배경을 흰색으로 지움
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
-        if (isNewGraph) {
-            if (graph)
-                graph->RenderGraph(hMemDC, 1, offsetX, offsetY);
-            isNewGraph = false;
-        }
-        else {
-            EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-                PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
-                auto* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-                
-                if (node) {
-                    pThis->MoveNode(hwnd, node, pThis, scale);
-                }
-                else {
-                    auto* node = reinterpret_cast<detail::EdgeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-                    if (node) {
+        //if (isNewGraph) {
+        if (graph)
+            graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        //    isNewGraph = false;
+        //}
+        //else {
+        //    EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
+        //        PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
+        //        detail::InfoBase* elem = reinterpret_cast<detail::InfoBase*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        //        
+        //        switch (elem->type) {
+        //        case detail::InfoBase::Type::Node:
+        //            pThis->MoveNode(hwnd, static_cast<detail::NodeInfo*>(elem), pThis, scale);
+        //            break;
+        //        case detail::InfoBase::Type::Edge:
+        //            pThis->MoveEdge(hwnd, static_cast<detail::EdgeInfo*>(elem), pThis, scale);
+        //            break;
+        //        }
 
-                    }
-                }
-
-                return TRUE;
-            }, (LPARAM)this);
-        }
+        //        return TRUE;
+        //    }, (LPARAM)this);
+        //}
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 

@@ -114,7 +114,7 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
 			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
-				//DrawLine(edge, x_s, y_s, x_e, y_e);
+				DrawLine(edge, x_s, y_s, x_e, y_e);
 				visitedEdges.insert(edgeKey);				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
@@ -170,10 +170,10 @@ void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);
 	detail::EdgeInfo* ei = new detail::EdgeInfo();
 	ei->edge = edge;
-	ei->logicX = anchor_x;
-	ei->logicY = anchor_y;
-	ei->len = len;
-	ei->height = height;
+	ei->start_logicX = x1;
+	ei->start_logicY = y1;
+	ei->end_logicX = x2;
+	ei->end_logicY = y2;
 	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ei));	
 
 	RECT client;
