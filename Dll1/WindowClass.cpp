@@ -561,14 +561,6 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
 LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg)
     {
-    case WM_CREATE: {
-        RECT client;
-        GetClientRect(hwnd, &client);
-        HRGN hRgn = CreateEllipticRgn(0, 0, (client.right - client.left), (client.bottom - client.top));
-        SetWindowRgn(hwnd, hRgn, TRUE);
-        DeleteObject(hRgn);
-        break;
-    }
     case WM_PAINT:
     {
         RECT client;

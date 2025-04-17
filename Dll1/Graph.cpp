@@ -117,14 +117,23 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 				visitedEdges.insert(edge);				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
-				DrawNode(start, x_s, y_s, r_xs, r_ys);
+				//DrawNode(start, x_s, y_s, r_xs, r_ys);
 				visitedNodes.insert(start);
 			}
 			if (visitedNodes.find(end) == visitedNodes.end()) {
-				DrawNode(end, x_e, y_e, r_xe, r_ye);
+				//DrawNode(end, x_e, y_e, r_xe, r_ye);
 				visitedNodes.insert(end);
 			}
 		}
+	}
+
+	for (auto* node : visitedNodes) {
+		pointf coord = ND_coord(node);
+		int x = static_cast<int>(((coord.x - x_min) / width) * panel.width * scaleFactor + offsetX);
+		int y = static_cast<int>((1.0 - (coord.y - y_min) / height) * panel.height * scaleFactor + offsetY);
+		int r_x = static_cast<int>(ND_width(node) * 72 * scaleFactor * (panel.width / width) / 2);
+		int r_y = static_cast<int>(ND_height(node) * 72 * scaleFactor * (panel.height / height) / 2);
+		DrawNode(node, x, y, r_x, r_y);
 	}
 }
 
@@ -145,6 +154,12 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 		x - rad, y - rad, 2 * rad, 2 * rad,
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
 	);
+
+	RECT client;
+	GetClientRect(hwnd, &client);
+	HRGN hRgn = CreateEllipticRgn(0, 0, (client.right - client.left), (client.bottom - client.top));
+	SetWindowRgn(hwnd, hRgn, TRUE);
+	DeleteObject(hRgn);
 
 	detail::NodeInfo* ni = new detail::NodeInfo();
 	ni->node = node;
