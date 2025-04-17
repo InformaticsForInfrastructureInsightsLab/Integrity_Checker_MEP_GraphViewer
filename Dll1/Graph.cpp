@@ -81,14 +81,13 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 	float width = x_max - x_min;
 	float height = y_max - y_min;
 
-	std::unordered_set<std::pair<Agnode_t*, Agnode_t*>, detail::EdgeHash> visitedEdges;
+	std::unordered_set<Agedge_t*> visitedEdges;
 	std::unordered_set<Agnode_t*> visitedNodes;
 
 	for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
 		for (Agedge_t* edge = agfstedge(g.get(), node); edge; edge = agnxtedge(g.get(), edge, node)) {
 			Agnode_t* start = aghead(edge);
 			Agnode_t* end = agtail(edge);
-			std::pair<Agnode_t*, Agnode_t*> edgeKey = { min(start, end), max(start, end) };
 
 			if (!start) {
 				MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
@@ -113,9 +112,9 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (panel.height / height) / 2);
 
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
-			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
+			if (visitedEdges.find(edge) == visitedEdges.end()) {
 				DrawLine(edge, x_s, y_s, x_e, y_e);
-				visitedEdges.insert(edgeKey);				
+				visitedEdges.insert(edge);				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
 				DrawNode(start, x_s, y_s, r_xs, r_ys);
@@ -126,7 +125,7 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 				visitedNodes.insert(end);
 			}
 		}
-	}	
+	}
 }
 
 void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {

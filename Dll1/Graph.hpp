@@ -16,12 +16,6 @@
 #include <graphviz/gvc.h>
 
 namespace detail {
-	struct EdgeHash {
-		size_t operator()(const std::pair<Agnode_t*, Agnode_t*>& edge) const {
-			return std::hash<void*>()(edge.first) ^ std::hash<void*>()(edge.second);
-		}
-	};
-
 	struct InfoBase {
 		enum class Type { Node, Edge } type;
 		virtual ~InfoBase() = default;
