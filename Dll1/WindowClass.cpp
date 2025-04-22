@@ -502,24 +502,36 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         break;
     }
     case WM_ERASEBKGND: {
-        HDC hdc = (HDC)wParam;
-        RECT rc;
-        GetClientRect(m_hwnd, &rc);
-        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1)); // ¹è°æ»ö Èò»ö
-        break;
+        return 1;
     }
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
+
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        int width = rc.right - rc.left;
+        int height = rc.bottom - rc.top;
+
+        HDC     memDC = CreateCompatibleDC(hdc);
+        HBITMAP hBmp = CreateCompatibleBitmap(hdc, width, height);
+        HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hBmp);
+        PatBlt(memDC, 0, 0, width, height, WHITENESS);
+
         int y = 10 - scrollOffset;
 
         for (const auto& msg : messages) {
             RECT r;
-            int h = AddMessageAndMeasure(hdc, msg, box_max_width, r, y);
-            DrawBalloon(hdc, r, msg);
+            int h = AddMessageAndMeasure(memDC, msg, box_max_width, r, y);
+            DrawBalloon(memDC, r, msg);
             y += h + 10;
         }
 
+        BitBlt(hdc, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
+
+        SelectObject(memDC, hOldBmp);
+        DeleteObject(hBmp);
+        DeleteDC(memDC);
         EndPaint(m_hwnd, &ps);
         break;
     }    
