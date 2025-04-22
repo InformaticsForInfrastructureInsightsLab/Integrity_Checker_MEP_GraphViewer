@@ -49,12 +49,12 @@ struct node {
 	std::string GUID;
 
 	node(nlohmann::json json) {
-		ElementType = json.find("ElementType") == json.end() ? "null" : json["ElementType"];
-		Category = json.find("Category") == json.end() ? "null" : json["Category"];
-		Priority = json.find("Priority") == json.end() ? "null" : json["Priority"];
-		BBox = json.find("BBox") == json.end() ? "null" : json["BBox"];
-		DisciplinesType = json.find("DisciplinesType") == json.end() ? "null" : json["DisciplinesType"];
-		GUID = json.find("GUID") == json.end() ? "null" : json["GUID"];
+		ElementType = !json.contains("ElementType") ? "null" : json["ElementType"];
+		Category = !json.contains("Category") ? "null" : json["Category"];
+		Priority = !json.contains("Priority") ? "null" : json["Priority"];
+		BBox = !json.contains("BBox") ? "null" : json["BBox"];
+		DisciplinesType = !json.contains("DisciplinesType") ? "null" : json["DisciplinesType"];
+		GUID = !json.contains("GUID") ? "null" : json["GUID"];
 	}
 };
 
@@ -81,21 +81,21 @@ struct edge {
 
 	edge(nlohmann::json json) {
 		auto& property = json["properties"];
-		Movable_Space = property.find("Movable_Space") == property.end() ? "null" : property["Movable_Space"];
-		Clash_Distance = property.find("Clash_Distance") == property.end() ? "null" : property["Clash_Distance"];
-		TopologyXaXis = property.find("TopologyXaXis") == property.end() ? "null" : property["TopologyXaXis"];
-		TopologyYaXis = property.find("TopologyYaXis") == property.end() ? "null" : property["TopologyYaXis"];
-		TopologyZaXis = property.find("TopologyZaXis") == property.end() ? "null" : property["TopologyZaXis"];
-		ClashType = property.find("ClashType") == property.end() ? "null" : property["ClashType"];
-		Abs_Volume_Diff = property.find("Abs_Volume_Diff") == property.end() ? "null" : property["Abs_Volume_Diff"];
-		Abs_Volume_Sum = property.find("Abs_Volume_Sum") == property.end() ? "null" : property["Abs_Volume_Sum"];
-		Severity = property.find("Severity") == property.end() ? "null" : property["Severity"];
-		Clearance = property.find("Clearance") == property.end() ? "null" : property["Clearance"];
-		Movable_Distance = property.find("Movable_Distance") == property.end() ? "null" : property["Movable_Distance"];
-		offset = property.find("offset") == property.end() ? "null" : property["offset"];
-		Penetration = property.find("Penetration") == property.end() ? "null" : property["Penetration"];
-		HardClash = property.find("HardClash") == property.end() ? "null" : property["HardClash"];
-		MovabilityResult = property.find("MovabilityResult") == property.end() ? "null" : property["MovabilityResult"];
+		Movable_Space = !property.contains("Movable_Space") ? "null" : property["Movable_Space"];
+		Clash_Distance = !property.contains("Clash_Distance") ? "null" : property["Clash_Distance"];
+		TopologyXaXis = !property.contains("TopologyXaXis") ? "null" : property["TopologyXaXis"];
+		TopologyYaXis = !property.contains("TopologyYaXis") ? "null" : property["TopologyYaXis"];
+		TopologyZaXis = !property.contains("TopologyZaXis") ? "null" : property["TopologyZaXis"];
+		ClashType = !property.contains("ClashType") ? "null" : property["ClashType"];
+		Abs_Volume_Diff = !property.contains("Abs_Volume_Diff") ? "null" : property["Abs_Volume_Diff"];
+		Abs_Volume_Sum = !property.contains("Abs_Volume_Sum") ? "null" : property["Abs_Volume_Sum"];
+		Severity = !property.contains("Severity") ? "null" : property["Severity"];
+		Clearance = !property.contains("Clearance") ? "null" : property["Clearance"];
+		Movable_Distance = !property.contains("Movable_Distance") ? "null" : property["Movable_Distance"];
+		offset = !property.contains("offset") ? "null" : property["offset"];
+		Penetration = !property.contains("Penetration") ? "null" : property["Penetration"];
+		HardClash = !property.contains("HardClash") ? "null" : property["HardClash"];
+		MovabilityResult = !property.contains("MovabilityResult") ? "null" : property["MovabilityResult"];
 		id = json["id"];
 	}
 };

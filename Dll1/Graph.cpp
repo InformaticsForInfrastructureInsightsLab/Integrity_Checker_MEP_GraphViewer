@@ -147,7 +147,8 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 	int rad = max(rx, ry) / 2;
 
 	// 노드 그리기
-	HWND hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_TOOLWINDOW, 
+	HWND hwnd = CreateWindowEx(
+		0,
 		L"NODECLASS", wGuid,
 		WS_CHILD | WS_VISIBLE,
 		x - rad, y - rad, 2 * rad, 2 * rad,
@@ -177,7 +178,7 @@ void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
 	int height = abs(y2 - y1) > thickness ? abs(y2 - y1) : thickness;
 
 	HWND line = CreateWindowEx(
-		WS_EX_LAYERED | WS_EX_TOOLWINDOW,
+		0,
 		L"LINECLASS", L"Line Window", WS_CHILD | WS_VISIBLE,
 		anchor_x, anchor_y, len, height, 
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);

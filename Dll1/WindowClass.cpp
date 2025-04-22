@@ -332,12 +332,6 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         EndPaint(m_hwnd, &ps);
         break;
     }
-    case WM_ERASEBKGND: {
-        RECT rect;
-        GetClientRect(m_hwnd, &rect);
-        FillRect((HDC)wParam, &rect, (HBRUSH)(COLOR_WINDOW + 1));
-        break;
-    }
     case WM_MOUSEWHEEL: {
         int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // 휠 방향 (120 또는 -120)
         POINT cursor;
@@ -620,7 +614,6 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         g_guidExport(guid, guid);
         break;
     }
-    
     case WM_DESTROY: {
         auto* user_data = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
         delete user_data;
