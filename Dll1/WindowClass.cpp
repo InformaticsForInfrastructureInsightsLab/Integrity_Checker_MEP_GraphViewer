@@ -597,12 +597,6 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         EndPaint(hwnd, &ps);
         break;
     }
-    case WM_ERASEBKGND: {
-        RECT rect;
-        GetClientRect(hwnd, &rect);
-        FillRect((HDC)wParam, &rect, (HBRUSH)(GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND)));
-        break;
-    }
     case WM_LBUTTONDOWN: {
         Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
         std::string type_str = agget(node, const_cast<char*>("element_type"));

@@ -117,11 +117,9 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 				visitedEdges.insert(edge);				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
-				//DrawNode(start, x_s, y_s, r_xs, r_ys);
 				visitedNodes.insert(start);
 			}
 			if (visitedNodes.find(end) == visitedNodes.end()) {
-				//DrawNode(end, x_e, y_e, r_xe, r_ye);
 				visitedNodes.insert(end);
 			}
 		}
