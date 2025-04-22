@@ -40,8 +40,8 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_CREATE:
-        // ÀÔ·Â Ä­ (Edit Control) »ý¼º
+    case WM_CREATE: 
+        // ìž…ë ¥ ì¹¸ (Edit Control) ìƒì„±
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
@@ -50,34 +50,33 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             GetModuleHandle(NULL), nullptr
         );
 
-        // ¹öÆ° »ý¼º
+        // ë²„íŠ¼ ìƒì„±
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
             850, 500, 90, 90,
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
-
         hListView = CreateWindowEx(
-            WS_EX_CLIENTEDGE, WC_LISTVIEW, L" ",
-            WS_CHILD | WS_VISIBLE | LVS_REPORT,
+            0, WC_LISTVIEW, L" ",
+            WS_CHILD | WS_VISIBLE | WS_BORDER | LVS_REPORT,
             645, 0, 300, 340, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
         CreateColumn();
 
-        // ±×·¡ÇÁ ÆÐ³Î
+        // ê·¸ëž˜í”„ íŒ¨ë„
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_BORDER, 0,
             10, 0, 640, 340, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
-        // Ã¤ÆÃ ÆÐ³Î
+        // ì±„íŒ… íŒ¨ë„
         if (!chatPanel.Create(L"ChattingPanel",
             WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
             10, 350, 930, 140, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
-        break;    
+        break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
@@ -249,7 +248,7 @@ void MainWindow::AddItems(nlohmann::json context) {
 
 #pragma region PanelWindow
 LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static float scale = 0.7f;
+    static float scale = 1.0f;
     static Graph* graph = nullptr;
     static bool isDragging = false;
     static POINT lastMousePos = { 0,0 };
@@ -283,7 +282,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         RECT wnd_sz = { 0,0,width, height };
         offsetX = 0; 
         offsetY = 0;
-        scale = 0.7f;
+        scale = 1.0f;
         isNewGraph = true;
         InvalidateRect(m_hwnd, &wnd_sz, true);        
         break;
@@ -292,46 +291,40 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
 
-        // 1. ¹é¹öÆÛ »ý¼º (¸Þ¸ð¸® DC)
+        // 1. ë°±ë²„í¼ ìƒì„± (ë©”ëª¨ë¦¬ DC)
         HDC hMemDC = CreateCompatibleDC(hdc);
         HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
 
-        // ¹è°æÀ» Èò»öÀ¸·Î Áö¿ò
+        // ë°°ê²½ì„ í°ìƒ‰ìœ¼ë¡œ ì§€ì›€
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
-        if (isNewGraph) {
-            if (graph)
-                graph->RenderGraph(hMemDC, 1, offsetX, offsetY);
-            isNewGraph = false;
-        }
-        else {
-            EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-                PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
-                detail::NodeInfo* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-                
-                if (!node) {
-                    MessageBox(hwnd, L"pos is null!", L" ", MB_OK);
-                    return true;
-                }
-                int x = node->logicX * scale + pThis->offsetX;
-                int y = node->logicY * scale + pThis->offsetY;
-                int rad = node->logicRad * scale;
+        //if (isNewGraph) {
+        if (graph)
+            graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        //    isNewGraph = false;
+        //}
+        //else {
+        //    EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
+        //        PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
+        //        detail::InfoBase* elem = reinterpret_cast<detail::InfoBase*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        //        
+        //        switch (elem->type) {
+        //        case detail::InfoBase::Type::Node:
+        //            pThis->MoveNode(hwnd, static_cast<detail::NodeInfo*>(elem), pThis, scale);
+        //            break;
+        //        case detail::InfoBase::Type::Edge:
+        //            pThis->MoveEdge(hwnd, static_cast<detail::EdgeInfo*>(elem), pThis, scale);
+        //            break;
+        //        }
 
-                MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
-                RECT r;
-                GetClientRect(hwnd, &r);
-                HRGN hRgn = CreateEllipticRgn(0, 0, (r.right - r.left), (r.bottom - r.top));
-                SetWindowRgn(hwnd, hRgn, TRUE);
-                DeleteObject(hRgn);
-
-                return TRUE;
-                }, (LPARAM)this);
-        }
+        //        return TRUE;
+        //    }, (LPARAM)this);
+        //}
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 
-        // 5. ¸®¼Ò½º Á¤¸®
+        // 5. ë¦¬ì†ŒìŠ¤ ì •ë¦¬
         SelectObject(hMemDC, hOldBitmap);
         DeleteObject(hBitmap);
         DeleteDC(hMemDC);
@@ -346,20 +339,20 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     case WM_MOUSEWHEEL: {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // ÈÙ ¹æÇâ (120 ¶Ç´Â -120)
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // íœ  ë°©í–¥ (120 ë˜ëŠ” -120)
         POINT cursor;
         GetCursorPos(&cursor);
-        ScreenToClient(m_hwnd, &cursor);  // À©µµ¿ì ±âÁØ ÁÂÇ¥·Î º¯È¯
+        ScreenToClient(m_hwnd, &cursor);  // ìœˆë„ìš° ê¸°ì¤€ ì¢Œí‘œë¡œ ë³€í™˜
 
         double oldScale = scale;
         scale += (delta > 0) ? 0.1 : -0.1;
         if (scale < 0.1) scale = 0.1;
 
-        // ¸¶¿ì½º ÁÂÇ¥ Áß½ÉÀ¸·Î È®´ë/Ãà¼Ò º¯È¯
+        // ë§ˆìš°ìŠ¤ ì¢Œí‘œ ì¤‘ì‹¬ìœ¼ë¡œ í™•ëŒ€/ì¶•ì†Œ ë³€í™˜
         offsetX = cursor.x - (cursor.x - offsetX) * (scale / oldScale);
         offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
-        // Ä¿½ºÅÒ ÀÌº¥Æ®·Î ¿ø ´Ù½Ã ±×¸®±â ¿äÃ»
+        // ì»¤ìŠ¤í…€ ì´ë²¤íŠ¸ë¡œ ì› ë‹¤ì‹œ ê·¸ë¦¬ê¸° ìš”ì²­
         RECT wnd_sz = { 0,0,width, height };
         InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
@@ -450,7 +443,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         int newMsgHeight = AddMessageAndMeasure(hdc, messages.back(), box_max_width, r, totalContentHeight);
         ReleaseDC(m_hwnd, hdc);
 
-        // ±âÁ¸ ³»¿ë À§·Î ½ºÅ©·Ñ
+        // ê¸°ì¡´ ë‚´ìš© ìœ„ë¡œ ìŠ¤í¬ë¡¤
         ScrollWindowEx(m_hwnd, 0, -newMsgHeight, NULL, NULL, NULL, NULL, SW_INVALIDATE);
         totalContentHeight += newMsgHeight + 10;
 
@@ -458,7 +451,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
 
-        // ½ºÅ©·Ñ Á¤º¸ °»½Å
+        // ìŠ¤í¬ë¡¤ ì •ë³´ ê°±ì‹ 
         SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
         si.nMin = 0;
         si.nMax = totalContentHeight;
@@ -466,7 +459,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         si.nPos = scrollOffset;
         SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
 
-        // ÇÏ´Ü »õ ¸Þ½ÃÁö ¿µ¿ª¸¸ ´Ù½Ã ±×¸²
+        // í•˜ë‹¨ ìƒˆ ë©”ì‹œì§€ ì˜ì—­ë§Œ ë‹¤ì‹œ ê·¸ë¦¼
         RECT invalidRect = { 0, height - newMsgHeight, width, height };
         InvalidateRect(m_hwnd, &invalidRect, TRUE);
         break;
@@ -580,14 +573,6 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
 LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg)
     {
-    case WM_CREATE: {
-        RECT client;
-        GetClientRect(hwnd, &client);
-        HRGN hRgn = CreateEllipticRgn(0, 0, (client.right - client.left), (client.bottom - client.top));
-        SetWindowRgn(hwnd, hRgn, TRUE);
-        DeleteObject(hRgn);
-        break;
-    }
     case WM_PAINT:
     {
         RECT client;
@@ -600,7 +585,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
 
-        // ³ëµå¿¡ ±ÛÀÚ ¾²±â
+        // ë…¸ë“œì— ê¸€ìž ì“°ê¸°
         Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
         std::string type = agget(node, const_cast<char*>("element_type"));
 
@@ -622,12 +607,6 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         TextOutA(hdc, text_x, text_y, type.c_str(), type.length());
 
         EndPaint(hwnd, &ps);
-        break;
-    }
-    case WM_ERASEBKGND: {
-        RECT rect;
-        GetClientRect(hwnd, &rect);
-        FillRect((HDC)wParam, &rect, (HBRUSH)(GetClassLongPtr(hwnd, GCLP_HBRBACKGROUND)));
         break;
     }
     case WM_LBUTTONDOWN: {
@@ -661,9 +640,9 @@ LRESULT CALLBACK LineWindow::LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARA
     switch (uMsg)
     {
     case WM_LBUTTONDOWN: {
-        Agedge_t* edge = reinterpret_cast<Agedge_t*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        Agnode_t* start = aghead(edge);
-        Agnode_t* end = agtail(edge);
+        detail::EdgeInfo* ei = reinterpret_cast<detail::EdgeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+        Agnode_t* start = aghead(ei->edge);
+        Agnode_t* end = agtail(ei->edge);
 
         std::string start_guid_str = agnameof(start);
         size_t wideLen = 0;

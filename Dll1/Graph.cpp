@@ -81,14 +81,13 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 	float width = x_max - x_min;
 	float height = y_max - y_min;
 
-	std::unordered_set<std::pair<Agnode_t*, Agnode_t*>, detail::EdgeHash> visitedEdges;
+	std::unordered_set<Agedge_t*> visitedEdges;
 	std::unordered_set<Agnode_t*> visitedNodes;
 
 	for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
 		for (Agedge_t* edge = agfstedge(g.get(), node); edge; edge = agnxtedge(g.get(), edge, node)) {
 			Agnode_t* start = aghead(edge);
 			Agnode_t* end = agtail(edge);
-			std::pair<Agnode_t*, Agnode_t*> edgeKey = { min(start, end), max(start, end) };
 
 			if (!start) {
 				MessageBox(panel.m_hwnd, L"start is null", L" ", MB_OK);
@@ -113,20 +112,27 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (panel.height / height) / 2);
 
 			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
-			if (visitedEdges.find(edgeKey) == visitedEdges.end()) {
+			if (visitedEdges.find(edge) == visitedEdges.end()) {
 				DrawLine(edge, x_s, y_s, x_e, y_e);
-				visitedEdges.insert(edgeKey);				
+				visitedEdges.insert(edge);				
 			}
 			if (visitedNodes.find(start) == visitedNodes.end()) {
-				DrawNode(start, x_s, y_s, r_xs, r_ys);
 				visitedNodes.insert(start);
 			}
 			if (visitedNodes.find(end) == visitedNodes.end()) {
-				DrawNode(end, x_e, y_e, r_xe, r_ye);
 				visitedNodes.insert(end);
 			}
 		}
-	}	
+	}
+
+	for (auto* node : visitedNodes) {
+		pointf coord = ND_coord(node);
+		int x = static_cast<int>(((coord.x - x_min) / width) * panel.width * scaleFactor + offsetX);
+		int y = static_cast<int>((1.0 - (coord.y - y_min) / height) * panel.height * scaleFactor + offsetY);
+		int r_x = static_cast<int>(ND_width(node) * 72 * scaleFactor * (panel.width / width) / 2);
+		int r_y = static_cast<int>(ND_height(node) * 72 * scaleFactor * (panel.height / height) / 2);
+		DrawNode(node, x, y, r_x, r_y);
+	}
 }
 
 void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
@@ -148,7 +154,17 @@ void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
 	);
 
-	detail::NodeInfo* ni = new detail::NodeInfo{ node, x,y,rad };
+	RECT client;
+	GetClientRect(hwnd, &client);
+	HRGN hRgn = CreateEllipticRgn(0, 0, (client.right - client.left), (client.bottom - client.top));
+	SetWindowRgn(hwnd, hRgn, TRUE);
+	DeleteObject(hRgn);
+
+	detail::NodeInfo* ni = new detail::NodeInfo();
+	ni->node = node;
+	ni->logicX = x;
+	ni->logicY = y;
+	ni->logicRad = rad;
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ni));
 }
 
@@ -165,7 +181,13 @@ void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
 		L"LINECLASS", L"Line Window", WS_CHILD | WS_VISIBLE,
 		anchor_x, anchor_y, len, height, 
 		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);
-	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(edge));	
+	detail::EdgeInfo* ei = new detail::EdgeInfo();
+	ei->edge = edge;
+	ei->start_logicX = x1;
+	ei->start_logicY = y1;
+	ei->end_logicX = x2;
+	ei->end_logicY = y2;
+	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ei));	
 
 	RECT client;
 	GetClientRect(line, &client);

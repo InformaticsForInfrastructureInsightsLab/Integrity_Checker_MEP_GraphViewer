@@ -16,17 +16,26 @@
 #include <graphviz/gvc.h>
 
 namespace detail {
-	struct EdgeHash {
-		size_t operator()(const std::pair<Agnode_t*, Agnode_t*>& edge) const {
-			return std::hash<void*>()(edge.first) ^ std::hash<void*>()(edge.second);
-		}
+	struct InfoBase {
+		enum class Type { Node, Edge } type;
+		virtual ~InfoBase() = default;
 	};
 
-	struct NodeInfo {
+	struct NodeInfo : InfoBase {
 		Agnode_t* node;
 		int logicX;
 		int logicY;
 		int logicRad;
+		NodeInfo() { type = Type::Node; }
+	};
+
+	struct EdgeInfo : InfoBase {
+		Agedge_t* edge;
+		int start_logicX;
+		int start_logicY;
+		int end_logicX;
+		int end_logicY;
+		EdgeInfo() { type = Type::Edge; }
 	};
 }
 
