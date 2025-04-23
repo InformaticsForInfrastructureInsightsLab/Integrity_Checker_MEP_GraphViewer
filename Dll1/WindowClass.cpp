@@ -583,7 +583,7 @@ LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
         std::string type = agget(node, const_cast<char*>("element_type"));
 
-        int fontSize = static_cast<int>(radX * 0.5);
+        int fontSize = static_cast<int>(radX * 0.4);
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, RGB(0, 0, 0));
 
