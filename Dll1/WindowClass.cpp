@@ -172,7 +172,7 @@ void MainWindow::CreateColumn() {
     lvc.pszText = const_cast<LPWSTR>(L"Clash Volume");
     lvc.cx = 150;
     lvc.iSubItem = 0;
-    ListView_InsertColumn(hListView, 12, &lvc);
+    ListView_InsertColumn(hListView, 13, &lvc);
 }
 
 void MainWindow::AddItems(nlohmann::json context) {
@@ -225,9 +225,17 @@ void MainWindow::AddItems(nlohmann::json context) {
         lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Offset"]);
         ListView_SetItem(hListView, &lvi);
 
-        lvi.iSubItem = 10;
-        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Penetration"]);
-        ListView_SetItem(hListView, &lvi);
+        if (clash["r"]["properties"].contains("Penetration")) {
+            lvi.iSubItem = 10;
+            lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Penetration"]);
+            ListView_SetItem(hListView, &lvi);
+        }
+        else {
+            lvi.iSubItem = 10;
+            lvi.pszText = const_cast<LPWSTR>(L"None");
+            ListView_SetItem(hListView, &lvi);
+        }
+
 
         lvi.iSubItem = 11;
         lvi.pszText = StringToLpwstr(clash["r"]["properties"]["ABS_Volume_Diff"]);
@@ -300,8 +308,18 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
         //if (isNewGraph) {
-        if (graph)
-            graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        try {
+            if (graph)
+                graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+        }
+        catch (std::exception e) {
+            wchar_t wcStr[4096];
+            size_t conv_chars;
+            int len = (int)strlen(e.what()) + 1;
+            errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
+            MessageBox(win.m_hwnd, wcStr, L"ERROR", MB_OK);
+        }
+
         //    isNewGraph = false;
         //}
         //else {

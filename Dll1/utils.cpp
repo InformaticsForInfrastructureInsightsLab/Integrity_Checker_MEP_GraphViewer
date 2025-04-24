@@ -34,7 +34,6 @@ BuildGraph(T&& json_string) {
 	graph->buildGraph();
 	graph->exportGraphImage();
 
-	//image = new Image(L"C:/objectinfo/gpt_visualize.png");
 	RECT client_rect = { 0,0,950,340 };
 	PostMessage(panel.m_hwnd, WM_UPDATE_GRAPH, NULL, reinterpret_cast<LPARAM>(graph));
 
