@@ -385,7 +385,6 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         
         Agedge_t* edge = HitTestEdge(lastMousePos.x, lastMousePos.y, graph);
         if (edge) {
-            MessageBox(m_hwnd, L" ", L" ", MB_OK);
             std::string start = agget(edge, const_cast<char*>("start_node"));
             std::string end = agget(edge, const_cast<char*>("end_node"));
             g_guidExport(StringToLpwstr(start), StringToLpwstr(end));

@@ -108,30 +108,34 @@ private:
         return nullptr;
     }
 
-    Agedge_t* HitTestEdge(int x, int y, Graph* graph, int toler = 10) {
+    Agedge_t* HitTestEdge(int x, int y, Graph* graph, int tolerance = 5) {
         for (const auto& edge : graph->visitedEdges) {
             int x1 = edge->start_logicX;
             int y1 = edge->start_logicY;
             int x2 = edge->end_logicX;
 			int y2 = edge->end_logicY;
 
-            int dx = x2 - x1;
-            int dy = y2 - y1;
+            double dx = x2 - x1;
+            double dy = y2 - y1;
+            double lengthSq = dx * dx + dy * dy;
 
-            int lengthSq = dx * dx + dy * dy;
+            if (lengthSq == 0.0) {
+                // 시작점과 끝점이 같으면 그냥 점 클릭
+                int distX = x - x1;
+                int distY = y - y1;
+                return nullptr;
+            }
 
-            if (lengthSq == 0.0)
-                continue;
-
-            double t = ((x - x1) * dx + (y - y1) * dy) / lengthSq;
-            if (t < 0.0 || t > 1.0)
-                continue;
+            // 투영점 t 계산
+            double t = ((x - x1) * dx + (x - y1) * dy) / lengthSq;
+            if (t < 0.0) t = 0.0;
+            if (t > 1.0) t = 1.0;
 
             double projX = x1 + t * dx;
             double projY = y1 + t * dy;
 
             double distSq = (x - projX) * (x - projX) + (y - projY) * (y - projY);
-			if (distSq <= toler * toler) 
+			if (distSq <= tolerance * tolerance)
                 return edge->edge;
         }
 		return nullptr;
