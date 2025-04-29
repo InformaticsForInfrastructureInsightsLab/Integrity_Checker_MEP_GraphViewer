@@ -95,61 +95,7 @@ public:
     );
 
 private:
-    void MoveNode(HWND hwnd, detail::NodeInfo* node, PanelWindow* pThis, float scale) {
-        int x = node->logicX * scale + pThis->offsetX;
-        int y = node->logicY * scale + pThis->offsetY;
-        int rad = node->logicRad * scale;
-
-        MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
-        RECT r;
-        GetClientRect(hwnd, &r);
-        HRGN hRgn = CreateEllipticRgn(0, 0, (r.right - r.left), (r.bottom - r.top));
-        SetWindowRgn(hwnd, hRgn, TRUE);
-        DeleteObject(hRgn);
-    }
-
-    void MoveEdge(HWND hwnd, detail::EdgeInfo* edge, PanelWindow* pThis, float scale) {
-        RECT client;
-        GetClientRect(hwnd, &client);
-
-        int x1 = edge->start_logicX * scale+ pThis->offsetX;
-        int y1 = edge->start_logicY * scale + pThis->offsetY;
-        int x2 = edge->end_logicX * scale + pThis->offsetX;
-        int y2 = edge->end_logicY * scale + pThis->offsetY;
-
-        POINT pt[4];
-        if (x1 < x2 && y1 > y2) {
-            pt[0].x = client.right * scale + pThis->offsetX;  pt[0].y = client.top * scale + pThis->offsetY;
-            pt[1].x = client.right * scale + pThis->offsetX;  pt[1].y = client.top * scale + pThis->offsetY + 5;
-            pt[2].x = client.left * scale + pThis->offsetX;   pt[2].y = client.bottom * scale + pThis->offsetY;
-            pt[3].x = client.left * scale + pThis->offsetX;   pt[3].y = client.bottom * scale + pThis->offsetY - 5;
-        }
-        else if (x1 > x2 && y1 > y2) {
-            pt[0].x = client.left * scale + pThis->offsetX;  pt[0].y = client.top * scale + pThis->offsetY;
-            pt[1].x = client.left * scale + pThis->offsetX;  pt[1].y = client.top * scale + pThis->offsetY + 5;
-            pt[2].x = client.right * scale + pThis->offsetX;   pt[2].y = client.bottom * scale + pThis->offsetY;
-            pt[3].x = client.right * scale + pThis->offsetX;   pt[3].y = client.bottom * scale + pThis->offsetY - 5;
-        }
-        else if (x1 > x2 && y1 < y2) {
-            pt[0].x = client.left * scale + pThis->offsetX;  pt[0].y = client.bottom * scale + pThis->offsetY;
-            pt[1].x = client.left * scale + pThis->offsetX;  pt[1].y = client.bottom * scale + pThis->offsetY - 5;
-            pt[2].x = client.right * scale + pThis->offsetX;   pt[2].y = client.top * scale + pThis->offsetY;
-            pt[3].x = client.right * scale + pThis->offsetX;   pt[3].y = client.top * scale + pThis->offsetY + 5;
-        }
-        else {
-            pt[0].x = client.left * scale + pThis->offsetX;  pt[0].y = client.top * scale + pThis->offsetY;
-            pt[1].x = client.left * scale + pThis->offsetX;  pt[1].y = client.top * scale + pThis->offsetY + 5;
-            pt[2].x = client.right * scale + pThis->offsetX;   pt[2].y = client.bottom * scale + pThis->offsetY;
-            pt[3].x = client.right * scale + pThis->offsetX;   pt[3].y = client.bottom * scale + pThis->offsetY - 5;
-        }
-        MoveWindow(hwnd,
-            x1 < x2 ? x1 : x2,
-            y1 < y2 ? y1 : y2,
-            abs(x2 - x1), abs(y2 - y1), true);
-        HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
-        SetWindowRgn(hwnd, hRgn, TRUE);
-        DeleteObject(hRgn);
-    }
+    
 };
 
 class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
@@ -230,19 +176,4 @@ public:
 
     void CreateColumn();
     void AddItems(nlohmann::json context);
-};
-
-extern PanelWindow panel;
-class CircleWindow {
-public:
-    static std::vector<HWND> nodes;
-public:
-    CircleWindow() { }
-
-    static LRESULT CALLBACK NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-};
-
-class LineWindow {
-public:
-    static LRESULT CALLBACK LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

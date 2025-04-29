@@ -257,22 +257,6 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static int dx, dy;
 
     switch (uMsg) {
-    case WM_CREATE: {
-        // register node class
-        WNDCLASS wc = {};
-        wc.lpfnWndProc = CircleWindow::NodeProc;
-        wc.hInstance = GetModuleHandle(NULL);
-        wc.lpszClassName = L"NODECLASS";
-        wc.hbrBackground = CreateSolidBrush(RGB(135, 206, 235));
-        RegisterClass(&wc);
-
-        WNDCLASS wc_line = {};
-        wc_line.lpfnWndProc = LineWindow::LineProc;
-        wc_line.hInstance = GetModuleHandle(NULL);
-        wc_line.lpszClassName = L"LINECLASS";
-        wc_line.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
-        RegisterClass(&wc_line);
-    } break;
     case WM_UPDATE_GRAPH: {
         if (graph) {
             graph->Release();
@@ -568,105 +552,6 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
     );
 
     return (m_hwnd ? TRUE : FALSE);
-}
-
-#pragma endregion
-
-#pragma region CircleWindow
-
-LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg)
-    {
-    case WM_PAINT:
-    {
-        RECT client;
-        GetClientRect(hwnd, &client);
-        int centX = (client.right + client.left) / 2;
-        int centY = (client.bottom + client.top) / 2;
-        int radX = (client.right - client.left) / 2;
-        int radY = (client.bottom - client.top) / 2;
-
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-
-        // 노드에 글자 쓰기
-        Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
-        std::string type = agget(node, const_cast<char*>("element_type"));
-
-        int fontSize = static_cast<int>(radX * 0.5);
-        SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(0, 0, 0));
-
-        HFONT hFont = CreateFont(
-            fontSize, 0, 0, 0, FALSE, FALSE, FALSE, FALSE,
-            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-            DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Arial")
-        );
-        HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-        SIZE size;
-
-        GetTextExtentPoint32A(hdc, type.c_str(), type.length(), &size);
-        int text_x = centX - (size.cx / 2);
-        int text_y = centY - (size.cy / 2);
-        TextOutA(hdc, text_x, text_y, type.c_str(), type.length());
-
-        EndPaint(hwnd, &ps);
-        break;
-    }
-    case WM_LBUTTONDOWN: {
-        Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
-        std::string type_str = agget(node, const_cast<char*>("element_type"));
-        size_t wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, type_str.c_str(), _TRUNCATE);
-        LPWSTR guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, guid, wideLen, type_str.c_str(), _TRUNCATE);
-
-        g_guidExport(guid, guid);
-        break;
-    }
-    
-    case WM_DESTROY: {
-        auto* user_data = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        delete user_data;
-        break;
-    }
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
-}
-
-#pragma endregion
-
-#pragma region LineWindow
-
-LRESULT CALLBACK LineWindow::LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg)
-    {
-    case WM_LBUTTONDOWN: {
-        detail::EdgeInfo* ei = reinterpret_cast<detail::EdgeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        Agnode_t* start = aghead(ei->edge);
-        Agnode_t* end = agtail(ei->edge);
-
-        std::string start_guid_str = agnameof(start);
-        size_t wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, start_guid_str.c_str(), _TRUNCATE);
-        LPWSTR start_guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, start_guid, wideLen, start_guid_str.c_str(), _TRUNCATE);
-
-        std::string end_guid_str = agnameof(end);
-        wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, end_guid_str.c_str(), _TRUNCATE);
-        LPWSTR end_guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, end_guid, wideLen, end_guid_str.c_str(), _TRUNCATE);
-
-        g_guidExport(start_guid, end_guid);
-        break;
-    }
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
 }
 
 #pragma endregion
