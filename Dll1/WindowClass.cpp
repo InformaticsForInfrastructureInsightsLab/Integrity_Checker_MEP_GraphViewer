@@ -304,8 +304,14 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
             
             for (auto edge : graph->visitedEdges) {
+                HPEN hPen = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
+                HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
+
                 MoveToEx(hMemDC, edge->start_logicX, edge->start_logicY, NULL);
                 LineTo(hMemDC, edge->end_logicX, edge->end_logicY);
+
+                SelectObject(hMemDC, hOldPen);
+                DeleteObject(hPen);
             }
 
             for (auto node : graph->visitedNodes) {
@@ -320,13 +326,17 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     node->logicX + node->logicRad, node->logicY + node->logicRad
                 );
 
+                SetBkMode(hMemDC, TRANSPARENT);                 // 배경 투명
+                SetTextAlign(hMemDC, TA_CENTER | TA_BASELINE);  // 중앙 정렬
+
+                std::string type = agget(node->node, const_cast<char*>("element_type"));
+                TextOutA(hMemDC, node->logicX, node->logicY, type.c_str(), type.length());
+
                 SelectObject(hMemDC, hOldPen);
                 SelectObject(hMemDC, hOldBrush);
                 DeleteObject(hBrush);
             }
-        }
-
-        
+        }        
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 

@@ -42,7 +42,7 @@ namespace detail {
 		int end_logicY;
 		EdgeInfo() { type = Type::Edge; }
 		EdgeInfo(Agedge_t* edge, int start_logicX, int start_logicY, int end_logicX, int end_logicY)
-			: edge(edge), start_logicX(start_logicX), end_logicX(end_logicX), end_logicY(end_logicY) {
+			: edge(edge), start_logicX(start_logicX), start_logicY(start_logicY), end_logicX(end_logicX), end_logicY(end_logicY) {
 			type = Type::Edge;
 		}
 	};
@@ -163,9 +163,6 @@ private:
 		}
 		return nullptr;
 	}
-
-	void DrawNode(Agnode_t* name, int x, int y, int rx, int ry);
-	void DrawLine(Agedge_t* edge, int x1, int y1, int x2, int y2);
 };
 
 #endif //GRAPH_H
