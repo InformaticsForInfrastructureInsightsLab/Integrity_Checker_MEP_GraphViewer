@@ -256,7 +256,21 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static bool isNewGraph = true;
     static int dx, dy;
 
-    switch (uMsg) {
+    static HFONT arial = nullptr;
+
+	switch (uMsg) {
+	case WM_CREATE: {
+		arial = CreateFont(
+            -16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET,
+            OUT_DEFAULT_PRECIS,
+            CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY,
+            DEFAULT_PITCH | FF_DONTCARE,
+            L"Arial"
+        );
+        break;
+	}
     case WM_UPDATE_GRAPH: {
         if (graph) {
             graph->Release();
@@ -284,43 +298,50 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
         //if (isNewGraph) {
-        if (graph) {
-            graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
-            
-            for (auto edge : graph->visitedEdges) {
-                HPEN hPen = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
-                HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
+        if (!graph) break;
 
-                MoveToEx(hMemDC, edge->start_logicX, edge->start_logicY, NULL);
-                LineTo(hMemDC, edge->end_logicX, edge->end_logicY);
+        graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
 
-                SelectObject(hMemDC, hOldPen);
-                DeleteObject(hPen);
-            }
+        for (auto edge : graph->visitedEdges) {
+            HPEN hPen = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
+            HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
 
-            for (auto node : graph->visitedNodes) {
-                HPEN hPen = (HPEN)GetStockObject(NULL_PEN);
-                HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235));
+            MoveToEx(hMemDC, edge->start_logicX, edge->start_logicY, NULL);
+            LineTo(hMemDC, edge->end_logicX, edge->end_logicY);
 
-                HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
-                HBRUSH hOldBrush = (HBRUSH)SelectObject(hMemDC, hBrush);
+            SelectObject(hMemDC, hOldPen);
+            DeleteObject(hPen);
+        }
 
-                Ellipse(hMemDC,
-                    node->logicX - node->logicRad, node->logicY - node->logicRad,
-                    node->logicX + node->logicRad, node->logicY + node->logicRad
-                );
+        for (auto node : graph->visitedNodes) {
+            HPEN hPen = (HPEN)GetStockObject(NULL_PEN);
+            HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235));
 
-                SetBkMode(hMemDC, TRANSPARENT);                 // 배경 투명
-                SetTextAlign(hMemDC, TA_CENTER | TA_BASELINE);  // 중앙 정렬
+            HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hMemDC, hBrush);
 
-                std::string type = agget(node->node, const_cast<char*>("element_type"));
-                TextOutA(hMemDC, node->logicX, node->logicY, type.c_str(), type.length());
+            Ellipse(hMemDC,
+                node->logicX - node->logicRad, node->logicY - node->logicRad,
+                node->logicX + node->logicRad, node->logicY + node->logicRad
+            );
 
-                SelectObject(hMemDC, hOldPen);
-                SelectObject(hMemDC, hOldBrush);
-                DeleteObject(hBrush);
-            }
-        }        
+            std::string type = agget(node->node, const_cast<char*>("element_type"));
+            RECT textRect;
+            textRect.left = node->logicX - node->logicRad;
+            textRect.top = node->logicY - node->logicRad;
+            textRect.right = node->logicX + node->logicRad;
+            textRect.bottom = node->logicY + node->logicRad;
+
+            HFONT hOldFont = (HFONT)SelectObject(hMemDC, arial);
+
+            SetBkMode(hMemDC, TRANSPARENT);
+            DrawTextA(hMemDC, type.c_str(), -1, &textRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+            SelectObject(hMemDC, hOldPen);
+            SelectObject(hMemDC, hOldBrush);
+            SelectObject(hMemDC, hOldFont);
+            DeleteObject(hBrush);
+        }
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 
@@ -358,10 +379,30 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     case WM_LBUTTONDOWN: {
-        SetCapture(m_hwnd);
-        isDragging = true;
+        SetCapture(m_hwnd);        
         lastMousePos.x = GET_X_LPARAM(lParam);
         lastMousePos.y = GET_Y_LPARAM(lParam);
+        
+        Agedge_t* edge = HitTestEdge(lastMousePos.x, lastMousePos.y, graph);
+        if (edge) {
+            MessageBox(m_hwnd, L" ", L" ", MB_OK);
+            std::string start = agget(edge, const_cast<char*>("start_node"));
+            std::string end = agget(edge, const_cast<char*>("end_node"));
+            g_guidExport(StringToLpwstr(start), StringToLpwstr(end));
+            ReleaseCapture();
+            return 1;
+        }
+
+        Agnode_t* node = HitTestNode(lastMousePos.x, lastMousePos.y, graph);
+        if (node) {
+            std::string type = agget(node, const_cast<char*>("element_type"));
+            LPWSTR LPtype = StringToLpwstr(type);
+            g_guidExport(LPtype, LPtype);
+            ReleaseCapture();
+            return 1;
+        }        
+
+        isDragging = true;
         break;
     }
     case WM_MOUSEMOVE:
@@ -390,6 +431,10 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             graph->Release();
             delete graph;
             graph = nullptr;
+        }
+        if (arial) {
+            DeleteObject(arial);
+            arial = nullptr;
         }
         UnregisterClass(ClassName(), GetModuleHandle(NULL));
         break;

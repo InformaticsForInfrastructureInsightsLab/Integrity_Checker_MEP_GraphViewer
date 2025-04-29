@@ -95,7 +95,47 @@ public:
     );
 
 private:
-    
+    Agnode_t* HitTestNode(int x, int y, Graph* graph) {
+        for (const auto& node : graph->visitedNodes) {
+            int l_x = node->logicX;
+            int l_y = node->logicY;
+            int r = node->logicRad;
+            if (l_x - r < x && x < l_x + r
+                && l_y - r < y && y < l_y + r) {
+                return node->node;
+            }
+        }
+        return nullptr;
+    }
+
+    Agedge_t* HitTestEdge(int x, int y, Graph* graph, int toler = 10) {
+        for (const auto& edge : graph->visitedEdges) {
+            int x1 = edge->start_logicX;
+            int y1 = edge->start_logicY;
+            int x2 = edge->end_logicX;
+			int y2 = edge->end_logicY;
+
+            int dx = x2 - x1;
+            int dy = y2 - y1;
+
+            int lengthSq = dx * dx + dy * dy;
+
+            if (lengthSq == 0.0)
+                continue;
+
+            double t = ((x - x1) * dx + (y - y1) * dy) / lengthSq;
+            if (t < 0.0 || t > 1.0)
+                continue;
+
+            double projX = x1 + t * dx;
+            double projY = y1 + t * dy;
+
+            double distSq = (x - projX) * (x - projX) + (y - projY) * (y - projY);
+			if (distSq <= toler * toler) 
+                return edge->edge;
+        }
+		return nullptr;
+    }
 };
 
 class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
