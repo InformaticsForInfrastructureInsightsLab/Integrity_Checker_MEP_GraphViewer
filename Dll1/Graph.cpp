@@ -15,7 +15,7 @@ Graph::Graph(nlohmann::json json) {
 }
 
 void Graph::buildGraph() {
-	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context »ı¼º
+	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context ìƒì„±
 	g = std::unique_ptr<Agraph_t, GraphDeleter>(agopen(const_cast<char*>("Neo4jGraph"), Agundirected, nullptr));
 
 	//set size
@@ -30,13 +30,13 @@ void Graph::buildGraph() {
 		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->GUID.c_str()), TRUE);
 		agsafeset(n2, const_cast<char*>("element_type"), const_cast<char*>(end_node->ElementType.c_str()), const_cast<char*>("default_value"));
 
-		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ¿Ü°û¼± »ö»ó
-		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ³»ºÎ »ö»ó Àû¿ë
-		agsafeset(n1, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ³»ºÎ »ö»ó
+		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ì™¸ê³½ì„  ìƒ‰ìƒ
+		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ë‚´ë¶€ ìƒ‰ìƒ ì ìš©
+		agsafeset(n1, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ë‚´ë¶€ ìƒ‰ìƒ
 
-		agsafeset(n2, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ¿Ü°û¼± »ö»ó
-		agsafeset(n2, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ³»ºÎ »ö»ó Àû¿ë
-		agsafeset(n2, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ³»ºÎ »ö»ó
+		agsafeset(n2, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ì™¸ê³½ì„  ìƒ‰ìƒ
+		agsafeset(n2, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ë‚´ë¶€ ìƒ‰ìƒ ì ìš©
+		agsafeset(n2, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ë‚´ë¶€ ìƒ‰ìƒ
 
 		Agedge_t* e = agedge(g.get(), n1, n2, NULL, TRUE);
 		agsafeset(e, const_cast<char*>("Movable_Space"), const_cast<char*>(clash->Movable_Space.c_str()), const_cast<char*>("default"));
@@ -97,13 +97,13 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			pointf coord_s = ND_coord(start);
 			pointf coord_e = ND_coord(end);
 
-			// ÁßÁ¡ÀÇ x,yÁÂÇ¥
+			// ì¤‘ì ì˜ x,yì¢Œí‘œ
 			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * panel.width * scaleFactor + offsetX);
 			int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * panel.height * scaleFactor + offsetY);
 			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * panel.width * scaleFactor + offsetX);
 			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * panel.height * scaleFactor + offsetY);
 
-			// ÀÎÄ¡ ´ÜÀ§¸¦ ÇÈ¼¿´ÜÀ§·Î º¯È¯ÇÏ±â À§ÇØ 72¸¦ °öÇÔ	
+			// ì¸ì¹˜ ë‹¨ìœ„ë¥¼ í”½ì…€ë‹¨ìœ„ë¡œ ë³€í™˜í•˜ê¸° ìœ„í•´ 72ë¥¼ ê³±í•¨	
 			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (panel.width / width) / 2);
 			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (panel.height / height) / 2);
 			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (panel.width / width) / 2);
@@ -117,5 +117,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			visitedNodes.insert(info_end);
 			visitedEdges.insert(ei);
 		}
+
 	}
 }

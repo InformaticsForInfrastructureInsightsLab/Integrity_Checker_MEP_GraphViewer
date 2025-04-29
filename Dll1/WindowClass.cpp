@@ -172,7 +172,7 @@ void MainWindow::CreateColumn() {
     lvc.pszText = const_cast<LPWSTR>(L"Clash Volume");
     lvc.cx = 150;
     lvc.iSubItem = 0;
-    ListView_InsertColumn(hListView, 12, &lvc);
+    ListView_InsertColumn(hListView, 13, &lvc);
 }
 
 void MainWindow::AddItems(nlohmann::json context) {
@@ -225,9 +225,17 @@ void MainWindow::AddItems(nlohmann::json context) {
         lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Offset"]);
         ListView_SetItem(hListView, &lvi);
 
-        lvi.iSubItem = 10;
-        lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Penetration"]);
-        ListView_SetItem(hListView, &lvi);
+        if (clash["r"]["properties"].contains("Penetration")) {
+            lvi.iSubItem = 10;
+            lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Penetration"]);
+            ListView_SetItem(hListView, &lvi);
+        }
+        else {
+            lvi.iSubItem = 10;
+            lvi.pszText = const_cast<LPWSTR>(L"None");
+            ListView_SetItem(hListView, &lvi);
+        }
+
 
         lvi.iSubItem = 11;
         lvi.pszText = StringToLpwstr(clash["r"]["properties"]["ABS_Volume_Diff"]);
@@ -297,7 +305,6 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 배경을 흰색으로 지움
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
-        //if (isNewGraph) {
         if (!graph) break;
 
         graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
@@ -351,12 +358,6 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         DeleteDC(hMemDC);
 
         EndPaint(m_hwnd, &ps);
-        break;
-    }
-    case WM_ERASEBKGND: {
-        RECT rect;
-        GetClientRect(m_hwnd, &rect);
-        FillRect((HDC)wParam, &rect, (HBRUSH)(COLOR_WINDOW + 1));
         break;
     }
     case WM_MOUSEWHEEL: {
@@ -539,24 +540,36 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         break;
     }
     case WM_ERASEBKGND: {
-        HDC hdc = (HDC)wParam;
-        RECT rc;
-        GetClientRect(m_hwnd, &rc);
-        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1)); // 배경색 흰색
-        break;
+        return 1;
     }
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
+
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        int width = rc.right - rc.left;
+        int height = rc.bottom - rc.top;
+
+        HDC     memDC = CreateCompatibleDC(hdc);
+        HBITMAP hBmp = CreateCompatibleBitmap(hdc, width, height);
+        HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hBmp);
+        PatBlt(memDC, 0, 0, width, height, WHITENESS);
+
         int y = 10 - scrollOffset;
 
         for (const auto& msg : messages) {
             RECT r;
-            int h = AddMessageAndMeasure(hdc, msg, box_max_width, r, y);
-            DrawBalloon(hdc, r, msg);
+            int h = AddMessageAndMeasure(memDC, msg, box_max_width, r, y);
+            DrawBalloon(memDC, r, msg);
             y += h + 10;
         }
 
+        BitBlt(hdc, 0, 0, width, height, memDC, 0, 0, SRCCOPY);
+
+        SelectObject(memDC, hOldBmp);
+        DeleteObject(hBmp);
+        DeleteDC(memDC);
         EndPaint(m_hwnd, &ps);
         break;
     }    
