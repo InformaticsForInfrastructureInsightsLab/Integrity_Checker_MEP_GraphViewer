@@ -300,27 +300,33 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
         //if (isNewGraph) {
-        if (graph)
+        if (graph) {
             graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
-        //    isNewGraph = false;
-        //}
-        //else {
-        //    EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-        //        PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
-        //        detail::InfoBase* elem = reinterpret_cast<detail::InfoBase*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        //        
-        //        switch (elem->type) {
-        //        case detail::InfoBase::Type::Node:
-        //            pThis->MoveNode(hwnd, static_cast<detail::NodeInfo*>(elem), pThis, scale);
-        //            break;
-        //        case detail::InfoBase::Type::Edge:
-        //            pThis->MoveEdge(hwnd, static_cast<detail::EdgeInfo*>(elem), pThis, scale);
-        //            break;
-        //        }
+            
+            for (auto edge : graph->visitedEdges) {
+                MoveToEx(hMemDC, edge->start_logicX, edge->start_logicY, NULL);
+                LineTo(hMemDC, edge->end_logicX, edge->end_logicY);
+            }
 
-        //        return TRUE;
-        //    }, (LPARAM)this);
-        //}
+            for (auto node : graph->visitedNodes) {
+                HPEN hPen = (HPEN)GetStockObject(NULL_PEN);
+                HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235));
+
+                HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
+                HBRUSH hOldBrush = (HBRUSH)SelectObject(hMemDC, hBrush);
+
+                Ellipse(hMemDC,
+                    node->logicX - node->logicRad, node->logicY - node->logicRad,
+                    node->logicX + node->logicRad, node->logicY + node->logicRad
+                );
+
+                SelectObject(hMemDC, hOldPen);
+                SelectObject(hMemDC, hOldBrush);
+                DeleteObject(hBrush);
+            }
+        }
+
+        
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 

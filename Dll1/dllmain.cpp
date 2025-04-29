@@ -8,6 +8,10 @@ PanelWindow panel;
 ChatPanelWindow chatPanel;
 HINSTANCE hInstance;
 
+extern CallbackFunc g_callback;
+extern GUIDExportFunc g_guidExport;
+extern LPWSTR prevContext;
+
 // program entry point
 extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 
@@ -26,6 +30,10 @@ extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+	g_callback = nullptr;
+	g_guidExport = nullptr;
+	prevContext = nullptr;
 
     return static_cast<int>(msg.wParam);
 }

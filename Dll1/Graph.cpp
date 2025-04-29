@@ -1,5 +1,3 @@
-#include <unordered_set>
-
 #include "Graph.hpp"
 #include "utils.hpp"
 #include "WindowClass.hpp"
@@ -67,6 +65,9 @@ void Graph::exportGraphImage() {
 }
 
 void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY) {
+	visitedEdges.clear();
+	visitedNodes.clear();
+
 	EnumChildWindows(panel.m_hwnd, +[](HWND hwnd, LPARAM lparam) -> int {
 		DestroyWindow(hwnd);
 		return TRUE;
@@ -80,9 +81,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 	float width = x_max - x_min;
 	float height = y_max - y_min;
-
-	std::unordered_set<Agedge_t*> visitedEdges;
-	std::unordered_set<Agnode_t*> visitedNodes;
 
 	for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
 		for (Agedge_t* edge = agfstedge(g.get(), node); edge; edge = agnxtedge(g.get(), edge, node)) {
@@ -111,27 +109,14 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (panel.width / width) / 2);
 			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (panel.height / height) / 2);
 
-			// 선을 먼저 그려야 간선이 노드 위로 그려지지 않음
-			if (visitedEdges.find(edge) == visitedEdges.end()) {
-				DrawLine(edge, x_s, y_s, x_e, y_e);
-				visitedEdges.insert(edge);				
-			}
-			if (visitedNodes.find(start) == visitedNodes.end()) {
-				visitedNodes.insert(start);
-			}
-			if (visitedNodes.find(end) == visitedNodes.end()) {
-				visitedNodes.insert(end);
-			}
-		}
-	}
+			detail::NodeInfo* info_start = new detail::NodeInfo(start, x_s, y_s, max(r_xs,r_ys) / 2 );
+			detail::NodeInfo* info_end = new detail::NodeInfo(end, x_e, y_e, max(r_xe,r_ye) / 2 );
+			detail::EdgeInfo* ei = new detail::EdgeInfo(edge, x_s, y_s, x_e, y_e );
 
-	for (auto* node : visitedNodes) {
-		pointf coord = ND_coord(node);
-		int x = static_cast<int>(((coord.x - x_min) / width) * panel.width * scaleFactor + offsetX);
-		int y = static_cast<int>((1.0 - (coord.y - y_min) / height) * panel.height * scaleFactor + offsetY);
-		int r_x = static_cast<int>(ND_width(node) * 72 * scaleFactor * (panel.width / width) / 2);
-		int r_y = static_cast<int>(ND_height(node) * 72 * scaleFactor * (panel.height / height) / 2);
-		DrawNode(node, x, y, r_x, r_y);
+			visitedNodes.insert(info_start);
+			visitedNodes.insert(info_end);
+			visitedEdges.insert(ei);
+		}
 	}
 }
 
