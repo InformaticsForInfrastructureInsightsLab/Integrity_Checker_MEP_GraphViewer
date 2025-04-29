@@ -1,5 +1,3 @@
-#include <unordered_set>
-
 #include "Graph.hpp"
 #include "utils.hpp"
 #include "WindowClass.hpp"
@@ -17,7 +15,7 @@ Graph::Graph(nlohmann::json json) {
 }
 
 void Graph::buildGraph() {
-	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context »ı¼º
+	gvc = std::unique_ptr<GVC_t, GVCDeleter>(gvContext());  // Graphviz context ìƒì„±
 	g = std::unique_ptr<Agraph_t, GraphDeleter>(agopen(const_cast<char*>("Neo4jGraph"), Agundirected, nullptr));
 
 	//set size
@@ -32,13 +30,13 @@ void Graph::buildGraph() {
 		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->GUID.c_str()), TRUE);
 		agsafeset(n2, const_cast<char*>("element_type"), const_cast<char*>(end_node->ElementType.c_str()), const_cast<char*>("default_value"));
 
-		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ¿Ü°û¼± »ö»ó
-		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ³»ºÎ »ö»ó Àû¿ë
-		agsafeset(n1, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ³»ºÎ »ö»ó
+		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ì™¸ê³½ì„  ìƒ‰ìƒ
+		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ë‚´ë¶€ ìƒ‰ìƒ ì ìš©
+		agsafeset(n1, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ë‚´ë¶€ ìƒ‰ìƒ
 
-		agsafeset(n2, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ¿Ü°û¼± »ö»ó
-		agsafeset(n2, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ³»ºÎ »ö»ó Àû¿ë
-		agsafeset(n2, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ³»ºÎ »ö»ó
+		agsafeset(n2, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // ì™¸ê³½ì„  ìƒ‰ìƒ
+		agsafeset(n2, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // ë‚´ë¶€ ìƒ‰ìƒ ì ìš©
+		agsafeset(n2, const_cast<char*>("fillcolor"), const_cast<char*>("orange"), const_cast<char*>("white")); // ë‚´ë¶€ ìƒ‰ìƒ
 
 		Agedge_t* e = agedge(g.get(), n1, n2, NULL, TRUE);
 		agsafeset(e, const_cast<char*>("Movable_Space"), const_cast<char*>(clash->Movable_Space.c_str()), const_cast<char*>("default"));
@@ -67,6 +65,9 @@ void Graph::exportGraphImage() {
 }
 
 void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offsetY) {
+	visitedEdges.clear();
+	visitedNodes.clear();
+
 	EnumChildWindows(panel.m_hwnd, +[](HWND hwnd, LPARAM lparam) -> int {
 		DestroyWindow(hwnd);
 		return TRUE;
@@ -80,9 +81,6 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 
 	float width = x_max - x_min;
 	float height = y_max - y_min;
-
-	std::unordered_set<Agedge_t*> visitedEdges;
-	std::unordered_set<Agnode_t*> visitedNodes;
 
 	for (Agnode_t* node = agfstnode(g.get()); node; node = agnxtnode(g.get(), node)) {
 		for (Agedge_t* edge = agfstedge(g.get(), node); edge; edge = agnxtedge(g.get(), edge, node)) {
@@ -99,129 +97,26 @@ void Graph::RenderGraph(HDC hdc, double scaleFactor, double offsetX, double offs
 			pointf coord_s = ND_coord(start);
 			pointf coord_e = ND_coord(end);
 
-			// ÁßÁ¡ÀÇ x,yÁÂÇ¥
+			// ì¤‘ì ì˜ x,yì¢Œí‘œ
 			int x_s = static_cast<int>(((coord_s.x - x_min) / width) * panel.width * scaleFactor + offsetX);
 			int y_s = static_cast<int>((1.0 - (coord_s.y - y_min) / height) * panel.height * scaleFactor + offsetY);
 			int x_e = static_cast<int>(((coord_e.x - x_min) / width) * panel.width * scaleFactor + offsetX);
 			int y_e = static_cast<int>((1.0 - (coord_e.y - y_min) / height) * panel.height * scaleFactor + offsetY);
 
-			// ÀÎÄ¡ ´ÜÀ§¸¦ ÇÈ¼¿´ÜÀ§·Î º¯È¯ÇÏ±â À§ÇØ 72¸¦ °öÇÔ	
+			// ì¸ì¹˜ ë‹¨ìœ„ë¥¼ í”½ì…€ë‹¨ìœ„ë¡œ ë³€í™˜í•˜ê¸° ìœ„í•´ 72ë¥¼ ê³±í•¨	
 			int r_xs = static_cast<int>(ND_width(start) * 72 * scaleFactor * (panel.width / width) / 2);
 			int r_ys = static_cast<int>(ND_height(start) * 72 * scaleFactor * (panel.height / height) / 2);
 			int r_xe = static_cast<int>(ND_width(end) * 72 * scaleFactor * (panel.width / width) / 2);
 			int r_ye = static_cast<int>(ND_height(end) * 72 * scaleFactor * (panel.height / height) / 2);
 
-			// ¼±À» ¸ÕÀú ±×·Á¾ß °£¼±ÀÌ ³ëµå À§·Î ±×·ÁÁöÁö ¾ÊÀ½
-			if (visitedEdges.find(edge) == visitedEdges.end()) {
-				DrawLine(edge, x_s, y_s, x_e, y_e);
-				visitedEdges.insert(edge);				
-			}
-			if (visitedNodes.find(start) == visitedNodes.end()) {
-				visitedNodes.insert(start);
-			}
-			if (visitedNodes.find(end) == visitedNodes.end()) {
-				visitedNodes.insert(end);
-			}
+			detail::NodeInfo* info_start = new detail::NodeInfo(start, x_s, y_s, max(r_xs,r_ys) / 2 );
+			detail::NodeInfo* info_end = new detail::NodeInfo(end, x_e, y_e, max(r_xe,r_ye) / 2 );
+			detail::EdgeInfo* ei = new detail::EdgeInfo(edge, x_s, y_s, x_e, y_e );
+
+			visitedNodes.insert(info_start);
+			visitedNodes.insert(info_end);
+			visitedEdges.insert(ei);
 		}
+
 	}
-
-	for (auto* node : visitedNodes) {
-		pointf coord = ND_coord(node);
-		int x = static_cast<int>(((coord.x - x_min) / width) * panel.width * scaleFactor + offsetX);
-		int y = static_cast<int>((1.0 - (coord.y - y_min) / height) * panel.height * scaleFactor + offsetY);
-		int r_x = static_cast<int>(ND_width(node) * 72 * scaleFactor * (panel.width / width) / 2);
-		int r_y = static_cast<int>(ND_height(node) * 72 * scaleFactor * (panel.height / height) / 2);
-		DrawNode(node, x, y, r_x, r_y);
-	}
-}
-
-void Graph::DrawNode(Agnode_t* node, int x, int y, int rx, int ry) {
-	size_t rv;
-	char* type = agget(node, const_cast<char*>("element_type"));
-	errno_t err = mbstowcs_s(&rv, nullptr, 0, type, _TRUNCATE);
-
-	// 2. º¯È¯ÇÒ wchar_t ¹è¿­ ÇÒ´ç
-	wchar_t* wGuid = new wchar_t[rv];
-	// 3. º¯È¯ ¼öÇà
-	err = mbstowcs_s(&rv, wGuid, rv, type, _TRUNCATE);
-	int rad = max(rx, ry) / 2;
-
-	// ³ëµå ±×¸®±â
-	HWND hwnd = CreateWindowEx(
-		0,
-		L"NODECLASS", wGuid,
-		WS_CHILD | WS_VISIBLE,
-		x - rad, y - rad, 2 * rad, 2 * rad,
-		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr
-	);
-
-	RECT client;
-	GetClientRect(hwnd, &client);
-	HRGN hRgn = CreateEllipticRgn(0, 0, (client.right - client.left), (client.bottom - client.top));
-	SetWindowRgn(hwnd, hRgn, TRUE);
-	DeleteObject(hRgn);
-
-	detail::NodeInfo* ni = new detail::NodeInfo();
-	ni->node = node;
-	ni->logicX = x;
-	ni->logicY = y;
-	ni->logicRad = rad;
-	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ni));
-}
-
-void Graph::DrawLine(Agedge_t* edge, int x1,int y1, int x2, int y2) {
-	int thickness = 3;
-
-	int anchor_x = x1 < x2 ? x1 : x2;
-	int anchor_y = y1 < y2 ? y1 : y2;
-	int len = abs(x2 - x1) > thickness ? abs(x2-x1) : thickness;
-	int height = abs(y2 - y1) > thickness ? abs(y2 - y1) : thickness;
-
-	HWND line = CreateWindowEx(
-		0,
-		L"LINECLASS", L"Line Window", WS_CHILD | WS_VISIBLE,
-		anchor_x, anchor_y, len, height, 
-		panel.m_hwnd, NULL, GetModuleHandle(NULL), nullptr);
-	detail::EdgeInfo* ei = new detail::EdgeInfo();
-	ei->edge = edge;
-	ei->start_logicX = x1;
-	ei->start_logicY = y1;
-	ei->end_logicX = x2;
-	ei->end_logicY = y2;
-	SetWindowLongPtr(line, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(ei));	
-
-	RECT client;
-	GetClientRect(line, &client);
-
-	POINT pt[4];
-
-	//(x1,y1)À» ¿øÁ¡À¸·Î (x2,y2)´Â ¸î»çºĞ¸é¿¡ ÀÖ´ÂÁö¿¡ µû¶ó Å¬¶óÀÌ¾ğÆ® ¿µ¿ªÀ» Àß¶óÁÙ°ÅÀÓ
-	// À©µµ¿ìÀÇ ÁÂÇ¥´Â ¹ØÀ¸·Î °¥¼ö·Ï Áõ°¡ÇÏ°í ¿À¸¥ÂÊÀ¸·Î °¥¼ö·Ï Áõ°¡ÇÔ¿¡ ÁÖÀÇ
-	if (x1 < x2 && y1 > y2) {
-		pt[0].x = client.right;  pt[0].y = client.top;
-		pt[1].x = client.right;  pt[1].y = client.top + thickness;
-		pt[2].x = client.left;   pt[2].y = client.bottom;
-		pt[3].x = client.left;   pt[3].y = client.bottom - thickness;
-	}
-	else if (x1 > x2 && y1 > y2) {
-		pt[0].x = client.left;  pt[0].y = client.top;
-		pt[1].x = client.left;  pt[1].y = client.top + thickness;
-		pt[2].x = client.right;   pt[2].y = client.bottom;
-		pt[3].x = client.right;   pt[3].y = client.bottom - thickness;
-	}
-	else if (x1 > x2 && y1 < y2) {
-		pt[0].x = client.left;  pt[0].y = client.bottom;
-		pt[1].x = client.left;  pt[1].y = client.bottom - thickness;
-		pt[2].x = client.right;   pt[2].y = client.top;
-		pt[3].x = client.right;   pt[3].y = client.top + thickness;
-	}
-	else {
-		pt[0].x = client.left;  pt[0].y = client.top;
-		pt[1].x = client.left;  pt[1].y = client.top + thickness;
-		pt[2].x = client.right;   pt[2].y = client.bottom;
-		pt[3].x = client.right;   pt[3].y = client.bottom - thickness;
-	}
-	HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
-	SetWindowRgn(line, hRgn, TRUE);
-	DeleteObject(hRgn);
 }

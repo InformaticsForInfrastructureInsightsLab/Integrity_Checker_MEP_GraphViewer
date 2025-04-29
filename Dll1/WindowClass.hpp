@@ -95,60 +95,50 @@ public:
     );
 
 private:
-    void MoveNode(HWND hwnd, detail::NodeInfo* node, PanelWindow* pThis, float scale) {
-        int x = node->logicX * scale + pThis->offsetX;
-        int y = node->logicY * scale + pThis->offsetY;
-        int rad = node->logicRad * scale;
-
-        MoveWindow(hwnd, x - rad, y - rad, rad * 2, rad * 2, true);
-        RECT r;
-        GetClientRect(hwnd, &r);
-        HRGN hRgn = CreateEllipticRgn(0, 0, (r.right - r.left), (r.bottom - r.top));
-        SetWindowRgn(hwnd, hRgn, TRUE);
-        DeleteObject(hRgn);
+    Agnode_t* HitTestNode(int x, int y, Graph* graph) {
+        for (const auto& node : graph->visitedNodes) {
+            int l_x = node->logicX;
+            int l_y = node->logicY;
+            int r = node->logicRad;
+            if (l_x - r < x && x < l_x + r
+                && l_y - r < y && y < l_y + r) {
+                return node->node;
+            }
+        }
+        return nullptr;
     }
 
-    void MoveEdge(HWND hwnd, detail::EdgeInfo* edge, PanelWindow* pThis, float scale) {
-        RECT client;
-        GetClientRect(hwnd, &client);
+    Agedge_t* HitTestEdge(int x, int y, Graph* graph, int tolerance = 5) {
+        for (const auto& edge : graph->visitedEdges) {
+            int x1 = edge->start_logicX;
+            int y1 = edge->start_logicY;
+            int x2 = edge->end_logicX;
+			int y2 = edge->end_logicY;
 
-        int x1 = edge->start_logicX * scale+ pThis->offsetX;
-        int y1 = edge->start_logicY * scale + pThis->offsetY;
-        int x2 = edge->end_logicX * scale + pThis->offsetX;
-        int y2 = edge->end_logicY * scale + pThis->offsetY;
+            double dx = x2 - x1;
+            double dy = y2 - y1;
+            double lengthSq = dx * dx + dy * dy;
 
-        POINT pt[4];
-        if (x1 < x2 && y1 > y2) {
-            pt[0].x = client.right * scale + pThis->offsetX;  pt[0].y = client.top * scale + pThis->offsetY;
-            pt[1].x = client.right * scale + pThis->offsetX;  pt[1].y = client.top * scale + pThis->offsetY + 5;
-            pt[2].x = client.left * scale + pThis->offsetX;   pt[2].y = client.bottom * scale + pThis->offsetY;
-            pt[3].x = client.left * scale + pThis->offsetX;   pt[3].y = client.bottom * scale + pThis->offsetY - 5;
+            if (lengthSq == 0.0) {
+                // 시작점과 끝점이 같으면 그냥 점 클릭
+                int distX = x - x1;
+                int distY = y - y1;
+                return nullptr;
+            }
+
+            // 투영점 t 계산
+            double t = ((x - x1) * dx + (x - y1) * dy) / lengthSq;
+            if (t < 0.0) t = 0.0;
+            if (t > 1.0) t = 1.0;
+
+            double projX = x1 + t * dx;
+            double projY = y1 + t * dy;
+
+            double distSq = (x - projX) * (x - projX) + (y - projY) * (y - projY);
+			if (distSq <= tolerance * tolerance)
+                return edge->edge;
         }
-        else if (x1 > x2 && y1 > y2) {
-            pt[0].x = client.left * scale + pThis->offsetX;  pt[0].y = client.top * scale + pThis->offsetY;
-            pt[1].x = client.left * scale + pThis->offsetX;  pt[1].y = client.top * scale + pThis->offsetY + 5;
-            pt[2].x = client.right * scale + pThis->offsetX;   pt[2].y = client.bottom * scale + pThis->offsetY;
-            pt[3].x = client.right * scale + pThis->offsetX;   pt[3].y = client.bottom * scale + pThis->offsetY - 5;
-        }
-        else if (x1 > x2 && y1 < y2) {
-            pt[0].x = client.left * scale + pThis->offsetX;  pt[0].y = client.bottom * scale + pThis->offsetY;
-            pt[1].x = client.left * scale + pThis->offsetX;  pt[1].y = client.bottom * scale + pThis->offsetY - 5;
-            pt[2].x = client.right * scale + pThis->offsetX;   pt[2].y = client.top * scale + pThis->offsetY;
-            pt[3].x = client.right * scale + pThis->offsetX;   pt[3].y = client.top * scale + pThis->offsetY + 5;
-        }
-        else {
-            pt[0].x = client.left * scale + pThis->offsetX;  pt[0].y = client.top * scale + pThis->offsetY;
-            pt[1].x = client.left * scale + pThis->offsetX;  pt[1].y = client.top * scale + pThis->offsetY + 5;
-            pt[2].x = client.right * scale + pThis->offsetX;   pt[2].y = client.bottom * scale + pThis->offsetY;
-            pt[3].x = client.right * scale + pThis->offsetX;   pt[3].y = client.bottom * scale + pThis->offsetY - 5;
-        }
-        MoveWindow(hwnd,
-            x1 < x2 ? x1 : x2,
-            y1 < y2 ? y1 : y2,
-            abs(x2 - x1), abs(y2 - y1), true);
-        HRGN hRgn = CreatePolygonRgn(pt, 4, WINDING);
-        SetWindowRgn(hwnd, hRgn, TRUE);
-        DeleteObject(hRgn);
+		return nullptr;
     }
 };
 
@@ -230,19 +220,4 @@ public:
 
     void CreateColumn();
     void AddItems(nlohmann::json context);
-};
-
-extern PanelWindow panel;
-class CircleWindow {
-public:
-    static std::vector<HWND> nodes;
-public:
-    CircleWindow() { }
-
-    static LRESULT CALLBACK NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-};
-
-class LineWindow {
-public:
-    static LRESULT CALLBACK LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

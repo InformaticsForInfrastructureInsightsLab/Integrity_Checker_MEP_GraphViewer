@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <unordered_set>
 #include <memory>
 
 #define GVDLL
@@ -27,6 +28,10 @@ namespace detail {
 		int logicY;
 		int logicRad;
 		NodeInfo() { type = Type::Node; }
+		NodeInfo(Agnode_t* node, int logicX, int logicY, int logicRad)
+			: node(node), logicX(logicX), logicY(logicY), logicRad(logicRad) {
+			type = Type::Node;
+		}
 	};
 
 	struct EdgeInfo : InfoBase {
@@ -36,6 +41,10 @@ namespace detail {
 		int end_logicX;
 		int end_logicY;
 		EdgeInfo() { type = Type::Edge; }
+		EdgeInfo(Agedge_t* edge, int start_logicX, int start_logicY, int end_logicX, int end_logicY)
+			: edge(edge), start_logicX(start_logicX), start_logicY(start_logicY), end_logicX(end_logicX), end_logicY(end_logicY) {
+			type = Type::Edge;
+		}
 	};
 }
 
@@ -125,6 +134,10 @@ class Graph {
 	std::unique_ptr<Agraph_t, GraphDeleter> g;
 
 public:
+	std::unordered_set<detail::EdgeInfo*> visitedEdges;
+	std::unordered_set<detail::NodeInfo*> visitedNodes;
+
+public:
 	Graph(nlohmann::json json);
 
 	void buildGraph();
@@ -133,6 +146,12 @@ public:
 
 	void Release() {
 		gvFreeLayout(gvc.get(), g.get());
+		for (auto edge : visitedEdges) {
+			delete edge;
+		}
+		for (auto node : visitedNodes) {
+			delete node;
+		}
 	}
 
 private:
@@ -144,9 +163,6 @@ private:
 		}
 		return nullptr;
 	}
-
-	void DrawNode(Agnode_t* name, int x, int y, int rx, int ry);
-	void DrawLine(Agedge_t* edge, int x1, int y1, int x2, int y2);
 };
 
 #endif //GRAPH_H

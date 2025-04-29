@@ -264,23 +264,21 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     static bool isNewGraph = true;
     static int dx, dy;
 
-    switch (uMsg) {
-    case WM_CREATE: {
-        // register node class
-        WNDCLASS wc = {};
-        wc.lpfnWndProc = CircleWindow::NodeProc;
-        wc.hInstance = GetModuleHandle(NULL);
-        wc.lpszClassName = L"NODECLASS";
-        wc.hbrBackground = CreateSolidBrush(RGB(135, 206, 235));
-        RegisterClass(&wc);
+    static HFONT arial = nullptr;
 
-        WNDCLASS wc_line = {};
-        wc_line.lpfnWndProc = LineWindow::LineProc;
-        wc_line.hInstance = GetModuleHandle(NULL);
-        wc_line.lpszClassName = L"LINECLASS";
-        wc_line.hbrBackground = CreateSolidBrush(RGB(0, 0, 0));
-        RegisterClass(&wc_line);
-    } break;
+	switch (uMsg) {
+	case WM_CREATE: {
+		arial = CreateFont(
+            -16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET,
+            OUT_DEFAULT_PRECIS,
+            CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY,
+            DEFAULT_PITCH | FF_DONTCARE,
+            L"Arial"
+        );
+        break;
+	}
     case WM_UPDATE_GRAPH: {
         if (graph) {
             graph->Release();
@@ -307,38 +305,50 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 배경을 흰색으로 지움
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
-        //if (isNewGraph) {
-        try {
-            if (graph)
-                graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
-        }
-        catch (std::exception e) {
-            wchar_t wcStr[4096];
-            size_t conv_chars;
-            int len = (int)strlen(e.what()) + 1;
-            errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
-            MessageBox(win.m_hwnd, wcStr, L"ERROR", MB_OK);
+        if (!graph) break;
+
+        graph->RenderGraph(hMemDC, scale, offsetX, offsetY);
+
+        for (auto edge : graph->visitedEdges) {
+            HPEN hPen = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
+            HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
+
+            MoveToEx(hMemDC, edge->start_logicX, edge->start_logicY, NULL);
+            LineTo(hMemDC, edge->end_logicX, edge->end_logicY);
+
+            SelectObject(hMemDC, hOldPen);
+            DeleteObject(hPen);
         }
 
-        //    isNewGraph = false;
-        //}
-        //else {
-        //    EnumChildWindows(m_hwnd, [](HWND hwnd, LPARAM lparam) -> BOOL {
-        //        PanelWindow* pThis = reinterpret_cast<PanelWindow*>(lparam);
-        //        detail::InfoBase* elem = reinterpret_cast<detail::InfoBase*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        //        
-        //        switch (elem->type) {
-        //        case detail::InfoBase::Type::Node:
-        //            pThis->MoveNode(hwnd, static_cast<detail::NodeInfo*>(elem), pThis, scale);
-        //            break;
-        //        case detail::InfoBase::Type::Edge:
-        //            pThis->MoveEdge(hwnd, static_cast<detail::EdgeInfo*>(elem), pThis, scale);
-        //            break;
-        //        }
+        for (auto node : graph->visitedNodes) {
+            HPEN hPen = (HPEN)GetStockObject(NULL_PEN);
+            HBRUSH hBrush = CreateSolidBrush(RGB(135, 206, 235));
 
-        //        return TRUE;
-        //    }, (LPARAM)this);
-        //}
+            HPEN hOldPen = (HPEN)SelectObject(hMemDC, hPen);
+            HBRUSH hOldBrush = (HBRUSH)SelectObject(hMemDC, hBrush);
+
+            Ellipse(hMemDC,
+                node->logicX - node->logicRad, node->logicY - node->logicRad,
+                node->logicX + node->logicRad, node->logicY + node->logicRad
+            );
+
+            std::string type = agget(node->node, const_cast<char*>("element_type"));
+            RECT textRect;
+            textRect.left = node->logicX - node->logicRad;
+            textRect.top = node->logicY - node->logicRad;
+            textRect.right = node->logicX + node->logicRad;
+            textRect.bottom = node->logicY + node->logicRad;
+
+            HFONT hOldFont = (HFONT)SelectObject(hMemDC, arial);
+
+            SetBkMode(hMemDC, TRANSPARENT);
+            DrawTextA(hMemDC, type.c_str(), -1, &textRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+            SelectObject(hMemDC, hOldPen);
+            SelectObject(hMemDC, hOldBrush);
+            SelectObject(hMemDC, hOldFont);
+            DeleteObject(hBrush);
+        }
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 
@@ -370,10 +380,29 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     case WM_LBUTTONDOWN: {
-        SetCapture(m_hwnd);
-        isDragging = true;
+        SetCapture(m_hwnd);        
         lastMousePos.x = GET_X_LPARAM(lParam);
         lastMousePos.y = GET_Y_LPARAM(lParam);
+        
+        Agedge_t* edge = HitTestEdge(lastMousePos.x, lastMousePos.y, graph);
+        if (edge) {
+            std::string start = agget(edge, const_cast<char*>("start_node"));
+            std::string end = agget(edge, const_cast<char*>("end_node"));
+            g_guidExport(StringToLpwstr(start), StringToLpwstr(end));
+            ReleaseCapture();
+            return 1;
+        }
+
+        Agnode_t* node = HitTestNode(lastMousePos.x, lastMousePos.y, graph);
+        if (node) {
+            std::string type = agget(node, const_cast<char*>("element_type"));
+            LPWSTR LPtype = StringToLpwstr(type);
+            g_guidExport(LPtype, LPtype);
+            ReleaseCapture();
+            return 1;
+        }        
+
+        isDragging = true;
         break;
     }
     case WM_MOUSEMOVE:
@@ -402,6 +431,10 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             graph->Release();
             delete graph;
             graph = nullptr;
+        }
+        if (arial) {
+            DeleteObject(arial);
+            arial = nullptr;
         }
         UnregisterClass(ClassName(), GetModuleHandle(NULL));
         break;
@@ -576,104 +609,6 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
     );
 
     return (m_hwnd ? TRUE : FALSE);
-}
-
-#pragma endregion
-
-#pragma region CircleWindow
-
-LRESULT CALLBACK CircleWindow::NodeProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg)
-    {
-    case WM_PAINT:
-    {
-        RECT client;
-        GetClientRect(hwnd, &client);
-        int centX = (client.right + client.left) / 2;
-        int centY = (client.bottom + client.top) / 2;
-        int radX = (client.right - client.left) / 2;
-        int radY = (client.bottom - client.top) / 2;
-
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-
-        // 노드에 글자 쓰기
-        Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
-        std::string type = agget(node, const_cast<char*>("element_type"));
-
-        int fontSize = static_cast<int>(radX * 0.4);
-        SetBkMode(hdc, TRANSPARENT);
-        SetTextColor(hdc, RGB(0, 0, 0));
-
-        HFONT hFont = CreateFont(
-            fontSize, 0, 0, 0, FALSE, FALSE, FALSE, FALSE,
-            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-            DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, TEXT("Arial")
-        );
-        HFONT oldFont = (HFONT)SelectObject(hdc, hFont);
-        SIZE size;
-
-        GetTextExtentPoint32A(hdc, type.c_str(), type.length(), &size);
-        int text_x = centX - (size.cx / 2);
-        int text_y = centY - (size.cy / 2);
-        TextOutA(hdc, text_x, text_y, type.c_str(), type.length());
-
-        EndPaint(hwnd, &ps);
-        break;
-    }
-    case WM_LBUTTONDOWN: {
-        Agnode_t* node = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA))->node;
-        std::string type_str = agget(node, const_cast<char*>("element_type"));
-        size_t wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, type_str.c_str(), _TRUNCATE);
-        LPWSTR guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, guid, wideLen, type_str.c_str(), _TRUNCATE);
-
-        g_guidExport(guid, guid);
-        break;
-    }
-    case WM_DESTROY: {
-        auto* user_data = reinterpret_cast<detail::NodeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        delete user_data;
-        break;
-    }
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
-}
-
-#pragma endregion
-
-#pragma region LineWindow
-
-LRESULT CALLBACK LineWindow::LineProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    switch (uMsg)
-    {
-    case WM_LBUTTONDOWN: {
-        detail::EdgeInfo* ei = reinterpret_cast<detail::EdgeInfo*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-        Agnode_t* start = aghead(ei->edge);
-        Agnode_t* end = agtail(ei->edge);
-
-        std::string start_guid_str = agnameof(start);
-        size_t wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, start_guid_str.c_str(), _TRUNCATE);
-        LPWSTR start_guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, start_guid, wideLen, start_guid_str.c_str(), _TRUNCATE);
-
-        std::string end_guid_str = agnameof(end);
-        wideLen = 0;
-        mbstowcs_s(&wideLen, nullptr, 0, end_guid_str.c_str(), _TRUNCATE);
-        LPWSTR end_guid = new WCHAR[wideLen];
-        mbstowcs_s(&wideLen, end_guid, wideLen, end_guid_str.c_str(), _TRUNCATE);
-
-        g_guidExport(start_guid, end_guid);
-        break;
-    }
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
-    }
-    return 0;
 }
 
 #pragma endregion
