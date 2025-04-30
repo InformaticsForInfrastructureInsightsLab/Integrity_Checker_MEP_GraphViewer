@@ -27,8 +27,10 @@ void Graph::buildGraph() {
 
 		Agnode_t* n1 = agnode(g.get(), const_cast<char*>(start_node->GUID.c_str()), TRUE);
 		agsafeset(n1, const_cast<char*>("element_type"), const_cast<char*>(start_node->ElementType.c_str()), const_cast<char*>("default_value"));
+		agsafeset(n1, const_cast<char*>("guid"), const_cast<char*>(start_node->GUID.c_str()), const_cast<char*>("default_value"));
 		Agnode_t* n2 = agnode(g.get(), const_cast<char*>(end_node->GUID.c_str()), TRUE);
 		agsafeset(n2, const_cast<char*>("element_type"), const_cast<char*>(end_node->ElementType.c_str()), const_cast<char*>("default_value"));
+		agsafeset(n2, const_cast<char*>("guid"), const_cast<char*>(end_node->GUID.c_str()), const_cast<char*>("default_value"));
 
 		agsafeset(n1, const_cast<char*>("color"), const_cast<char*>("orange"), const_cast<char*>("black"));        // 외곽선 색상
 		agsafeset(n1, const_cast<char*>("style"), const_cast<char*>("filled"), const_cast<char*>(""));         // 내부 색상 적용

@@ -395,7 +395,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         Agnode_t* node = HitTestNode(lastMousePos.x, lastMousePos.y, graph);
         if (node) {
-            std::string type = agget(node, const_cast<char*>("element_type"));
+            std::string type = agget(node, const_cast<char*>("guid"));
             LPWSTR LPtype = StringToLpwstr(type);
             g_guidExport(LPtype, LPtype);
             ReleaseCapture();
