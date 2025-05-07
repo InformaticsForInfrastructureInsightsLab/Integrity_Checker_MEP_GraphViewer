@@ -40,12 +40,18 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_CREATE: 
-        // 입력 칸 (Edit Control) 생성
+    case WM_CREATE: {
+        RECT rect;
+		GetClientRect(m_hwnd, &rect);
+
+		int width = rect.right - rect.left;
+		int height = rect.bottom - rect.top;
+
+        // 사용자 입력 칸 (Edit Control) 생성
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
-            10, 500, 830, 90,
+            10, height * 0.85, width * 0.8, height * 0.15 - 10,
             m_hwnd, (HMENU)1001,
             GetModuleHandle(NULL), nullptr
         );
@@ -54,34 +60,50 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-            850, 500, 90, 90,
+            width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10,
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
         hListView = CreateWindowEx(
             0, WC_LISTVIEW, L" ",
             WS_CHILD | WS_VISIBLE | WS_BORDER | LVS_REPORT,
-            645, 0, 300, 340, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+            width * 0.7, 0, width * 0.3 - 10, height * 0.6, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
         CreateColumn();
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_BORDER, 0,
-            10, 0, 640, 340, m_hwnd, (HMENU)3001)) {
+            10, 0, width*0.7 - 10, height*0.6, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
             WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
-            10, 350, 930, 140, m_hwnd, (HMENU)3003)) {
+            10, height*0.6+10, width-20, height*0.25-20, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
+        }
         }
         break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
+
+		MoveWindow(hEdit, 10, height * 0.85, width * 0.8, height * 0.15 - 10, TRUE);
+        MoveWindow(hButton, width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10, true);
+		MoveWindow(hListView, width * 0.7, 0, width * 0.3 - 10, height * 0.6, true);
+		MoveWindow(panel.m_hwnd, 10, 0, width * 0.7 - 10, height * 0.6, true);
+		MoveWindow(chatPanel.m_hwnd, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, true);
         break;
     }        
+    case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(m_hwnd, &ps);
+		RECT rc;
+		GetClientRect(m_hwnd, &rc);
+		FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+		EndPaint(m_hwnd, &ps);
+		break;
+    }
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
