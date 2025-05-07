@@ -3,6 +3,8 @@
 #include <commctrl.h>
 #include "Chat.h"
 
+#include <string>
+
 #pragma comment(lib, "comctl32.lib")
 
 #include "utils.hpp"
@@ -100,6 +102,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, SWP_NOZORDER);
 		EndDeferWindowPos(hdwp);
 
+        panel.width = width * 0.7 - 10;
+		panel.height = height * 0.6;
+		InvalidateRect(panel.m_hwnd, NULL, TRUE);
+		chatPanel.width = width - 20;
+		chatPanel.height = height * 0.25 - 20;
+		InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
         UpdateWindow(m_hwnd);
         break;
@@ -600,7 +608,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         int width = rc.right - rc.left;
         int height = rc.bottom - rc.top;
 
-        HDC     memDC = CreateCompatibleDC(hdc);
+        HDC memDC = CreateCompatibleDC(hdc);
         HBITMAP hBmp = CreateCompatibleBitmap(hdc, width, height);
         HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hBmp);
         PatBlt(memDC, 0, 0, width, height, WHITENESS);
@@ -648,6 +656,7 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
 
     width = nWidth;
     height = nHeight;
+	box_max_width = nWidth - 20;
 
     m_hwnd = CreateWindowEx(
         dwExStyle,
