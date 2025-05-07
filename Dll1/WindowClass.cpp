@@ -50,7 +50,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 사용자 입력 칸 (Edit Control) 생성
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
             10, height * 0.85, width * 0.8, height * 0.15 - 10,
             m_hwnd, (HMENU)1001,
             GetModuleHandle(NULL), nullptr
@@ -59,7 +59,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 버튼 생성
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
-            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
             width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10,
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
@@ -82,7 +82,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
-            WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS, 0,
             10, height*0.6+10, width-20, height*0.25-20, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
@@ -110,7 +110,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         RECT rc;
         GetClientRect(m_hwnd, &rc);
         FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
-        break;
+        return 1;
     }
     case WM_PAINT: {
 		PAINTSTRUCT ps;
@@ -331,6 +331,13 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         isNewGraph = true;
         InvalidateRect(m_hwnd, &wnd_sz, true);        
         break;
+    }
+    case WM_ERASEBKGND: {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+        return 1;
     }
     case WM_PAINT: {
         PAINTSTRUCT ps;
