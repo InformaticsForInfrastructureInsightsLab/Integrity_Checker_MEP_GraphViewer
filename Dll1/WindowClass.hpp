@@ -143,9 +143,11 @@ private:
 };
 
 class ChatPanelWindow : public BaseWindow<ChatPanelWindow> {
-    int width, height;
     std::vector<ChatMessage> messages;
     int box_max_width;
+
+public:
+    int width, height;
 public:
     ChatPanelWindow() : width(0), height(0), box_max_width(400) { }
 

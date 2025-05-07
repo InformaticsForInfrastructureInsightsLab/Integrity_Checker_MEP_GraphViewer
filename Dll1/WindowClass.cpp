@@ -3,6 +3,8 @@
 #include <commctrl.h>
 #include "Chat.h"
 
+#include <string>
+
 #pragma comment(lib, "comctl32.lib")
 
 #include "utils.hpp"
@@ -40,12 +42,18 @@ BOOL MainWindow::Create(PCWSTR lpWindowName,
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-    case WM_CREATE: 
-        // 입력 칸 (Edit Control) 생성
+    case WM_CREATE: {
+        RECT rect;
+		GetClientRect(m_hwnd, &rect);
+
+		int width = rect.right - rect.left;
+		int height = rect.bottom - rect.top;
+
+        // 사용자 입력 칸 (Edit Control) 생성
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
-            10, 500, 830, 90,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+            10, height * 0.85, width * 0.8, height * 0.15 - 10,
             m_hwnd, (HMENU)1001,
             GetModuleHandle(NULL), nullptr
         );
@@ -53,35 +61,74 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 버튼 생성
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
-            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
-            850, 500, 90, 90,
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
+            width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10,
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
         hListView = CreateWindowEx(
             0, WC_LISTVIEW, L" ",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | LVS_REPORT,
-            645, 0, 300, 340, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | LVS_REPORT,
+            width * 0.7, 0, width * 0.3 - 10, height * 0.6, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+        ListView_SetExtendedListViewStyle(
+            hListView,
+            LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER
+        );
         CreateColumn();
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_BORDER, 0,
-            10, 0, 640, 340, m_hwnd, (HMENU)3001)) {
+            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_BORDER, 0,
+            10, 0, width*0.7 - 10, height*0.6, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
-            WS_CHILD | WS_VISIBLE | WS_BORDER, 0,
-            10, 350, 930, 140, m_hwnd, (HMENU)3003)) {
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS, 0,
+            10, height*0.6+10, width-20, height*0.25-20, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
+        }
         }
         break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
+
+        HDWP hdwp = BeginDeferWindowPos(5);
+		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.85, width * 0.8, height * 0.15 - 10, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.6, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.6, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, SWP_NOZORDER);
+		EndDeferWindowPos(hdwp);
+
+        panel.width = width * 0.7 - 10;
+		panel.height = height * 0.6;
+		InvalidateRect(panel.m_hwnd, NULL, TRUE);
+		chatPanel.width = width - 20;
+		chatPanel.height = height * 0.25 - 20;
+		InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
+        InvalidateRect(m_hwnd, NULL, TRUE);
+        UpdateWindow(m_hwnd);
         break;
     }        
+    case WM_ERASEBKGND:
+    {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+        return 1;
+    }
+    case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(m_hwnd, &ps);
+		RECT rc;
+		GetClientRect(m_hwnd, &rc);
+		FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+		EndPaint(m_hwnd, &ps);
+		break;
+    }
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
@@ -293,6 +340,13 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         InvalidateRect(m_hwnd, &wnd_sz, true);        
         break;
     }
+    case WM_ERASEBKGND: {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+        return 1;
+    }
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
@@ -384,6 +438,9 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         lastMousePos.x = GET_X_LPARAM(lParam);
         lastMousePos.y = GET_Y_LPARAM(lParam);
         
+		if (graph == nullptr) 
+            break;
+
         Agedge_t* edge = HitTestEdge(lastMousePos.x, lastMousePos.y, graph);
         if (edge) {
             std::string start = agget(edge, const_cast<char*>("start_node"));
@@ -551,7 +608,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         int width = rc.right - rc.left;
         int height = rc.bottom - rc.top;
 
-        HDC     memDC = CreateCompatibleDC(hdc);
+        HDC memDC = CreateCompatibleDC(hdc);
         HBITMAP hBmp = CreateCompatibleBitmap(hdc, width, height);
         HBITMAP hOldBmp = (HBITMAP)SelectObject(memDC, hBmp);
         PatBlt(memDC, 0, 0, width, height, WHITENESS);
@@ -599,6 +656,7 @@ BOOL ChatPanelWindow::Create(PCWSTR lpWindowName,
 
     width = nWidth;
     height = nHeight;
+	box_max_width = nWidth - 20;
 
     m_hwnd = CreateWindowEx(
         dwExStyle,
