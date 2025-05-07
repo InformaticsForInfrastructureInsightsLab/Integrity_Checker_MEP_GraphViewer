@@ -65,13 +65,17 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         );
         hListView = CreateWindowEx(
             0, WC_LISTVIEW, L" ",
-            WS_CHILD | WS_VISIBLE | WS_BORDER | LVS_REPORT,
+            WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | LVS_REPORT,
             width * 0.7, 0, width * 0.3 - 10, height * 0.6, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+        ListView_SetExtendedListViewStyle(
+            hListView,
+            LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER
+        );
         CreateColumn();
 
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
-            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_BORDER, 0,
+            WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_BORDER, 0,
             10, 0, width*0.7 - 10, height*0.6, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
@@ -88,13 +92,26 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-		MoveWindow(hEdit, 10, height * 0.85, width * 0.8, height * 0.15 - 10, TRUE);
-        MoveWindow(hButton, width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10, true);
-		MoveWindow(hListView, width * 0.7, 0, width * 0.3 - 10, height * 0.6, true);
-		MoveWindow(panel.m_hwnd, 10, 0, width * 0.7 - 10, height * 0.6, true);
-		MoveWindow(chatPanel.m_hwnd, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, true);
+        HDWP hdwp = BeginDeferWindowPos(5);
+		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.85, width * 0.8, height * 0.15 - 10, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.6, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.6, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, SWP_NOZORDER);
+		EndDeferWindowPos(hdwp);
+
+        InvalidateRect(m_hwnd, NULL, TRUE);
+        UpdateWindow(m_hwnd);
         break;
     }        
+    case WM_ERASEBKGND:
+    {
+        HDC hdc = (HDC)wParam;
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+        break;
+    }
     case WM_PAINT: {
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(m_hwnd, &ps);
@@ -406,6 +423,9 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         lastMousePos.x = GET_X_LPARAM(lParam);
         lastMousePos.y = GET_Y_LPARAM(lParam);
         
+		if (graph == nullptr) 
+            break;
+
         Agedge_t* edge = HitTestEdge(lastMousePos.x, lastMousePos.y, graph);
         if (edge) {
             std::string start = agget(edge, const_cast<char*>("start_node"));
