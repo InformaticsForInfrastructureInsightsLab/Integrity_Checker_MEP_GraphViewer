@@ -16,7 +16,7 @@ extern LPWSTR prevContext;
 extern "C" __declspec(dllexport) int __stdcall ShowMyWindow() {
 
     if (!win.Create(L"Ai Assistance", WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, 0,
-        CW_USEDEFAULT, CW_USEDEFAULT, 1000, 750))
+        CW_USEDEFAULT, CW_USEDEFAULT, 1000, 850))
     {
         return 0;
     }

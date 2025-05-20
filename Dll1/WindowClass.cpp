@@ -44,16 +44,16 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_CREATE: {
         RECT rect;
-		GetClientRect(m_hwnd, &rect);
+        GetClientRect(m_hwnd, &rect);
 
-		int width = rect.right - rect.left;
-		int height = rect.bottom - rect.top;
+        int width = rect.right - rect.left;
+        int height = rect.bottom - rect.top;
 
         // 사용자 입력 칸 (Edit Control) 생성
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
-            10, height * 0.85, width * 0.8, height * 0.15 - 10,
+            10, height * 0.65, width * 0.8, height * 0.15 - 10,
             m_hwnd, (HMENU)1001,
             GetModuleHandle(NULL), nullptr
         );
@@ -62,13 +62,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
-            width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10,
+            width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10,
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
         hListView = CreateWindowEx(
             0, WC_LISTVIEW, L" ",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | LVS_REPORT,
-            width * 0.7, 0, width * 0.3 - 10, height * 0.6, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+            width * 0.7, 0, width * 0.3 - 10, height * 0.5, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
         ListView_SetExtendedListViewStyle(
             hListView,
             LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER
@@ -78,35 +78,50 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         // 그래프 패널
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_BORDER, 0,
-            10, 0, width*0.7 - 10, height*0.6, m_hwnd, (HMENU)3001)) {
+            10, 0, width * 0.7 - 10, height * 0.5, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
         // 채팅 패널
         if (!chatPanel.Create(L"ChattingPanel",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS, 0,
-            10, height*0.6+10, width-20, height*0.25-20, m_hwnd, (HMENU)3003)) {
+            10, height * 0.5 + 10, width - 20, height * 0.15 - 20, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
+
+        hGroup = CreateWindowEx(0, WC_BUTTON, L"Easy Search",
+            WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
+            10, height * 0.8, width * 0.8, height * 0.2 - 10, m_hwnd, nullptr, GetModuleHandle(NULL), nullptr);
+
+        for (int i = 0; i < dropdowns.size();i++) {
+            dropdowns[i] = CreateWindowEx(WS_EX_CLIENTEDGE, WC_COMBOBOX, L"",
+                WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
+                20 + (200 * (i % 3)) + (20 * (i % 3)), height * 0.8 + 50 * (i / 3) + 30,
+                200, 200,
+                m_hwnd, (HMENU)(5000 + i), GetModuleHandle(NULL), nullptr);
         }
+        
+        AddStringComboBox();
+    }
         break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
         HDWP hdwp = BeginDeferWindowPos(5);
-		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.85, width * 0.8, height * 0.15 - 10, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.6, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.6, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.65, width * 0.8, height * 0.15 - 10, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.5, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.5, SWP_NOZORDER);
+		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.5 + 10, width - 20, height * 0.15 - 20, SWP_NOZORDER);
+        hdwp = DeferWindowPos(hdwp, hGroup, NULL, 10, height * 0.8, width * 0.8, height * 0.2 - 10, SWP_NOZORDER);
 		EndDeferWindowPos(hdwp);
 
         panel.width = width * 0.7 - 10;
-		panel.height = height * 0.6;
+		panel.height = height * 0.5;
 		InvalidateRect(panel.m_hwnd, NULL, TRUE);
 		chatPanel.width = width - 20;
-		chatPanel.height = height * 0.25 - 20;
+		chatPanel.height = height * 0.15 - 20;
 		InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
         UpdateWindow(m_hwnd);
@@ -296,6 +311,24 @@ void MainWindow::AddItems(nlohmann::json context) {
         lvi.pszText = StringToLpwstr(clash["r"]["properties"]["Clash_Volume"]);
         ListView_SetItem(hListView, &lvi);
     }
+}
+
+void MainWindow::AddStringComboBox() {
+    ComboBox_AddString(dropdowns[0], L"IfcBeam");
+    ComboBox_AddString(dropdowns[0], L"IfcBuildingElementProxy");
+    ComboBox_AddString(dropdowns[0], L"IfcCableCarrierSegment");
+    ComboBox_AddString(dropdowns[0], L"IfcColumn");
+    ComboBox_AddString(dropdowns[0], L"IfcCovering");
+    ComboBox_AddString(dropdowns[0], L"IfcDoor");
+    ComboBox_AddString(dropdowns[0], L"IfcDuctSegment");
+    ComboBox_AddString(dropdowns[0], L"IfcMember");
+    ComboBox_AddString(dropdowns[0], L"IfcPipeSegment");
+    ComboBox_AddString(dropdowns[0], L"IfcRailing");
+    ComboBox_AddString(dropdowns[0], L"IfcSlab");
+    ComboBox_AddString(dropdowns[0], L"IfcSpace");
+    ComboBox_AddString(dropdowns[0], L"IfcStairFlight");
+    ComboBox_AddString(dropdowns[0], L"IfcWall");
+    SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"ElementType1");
 }
 
 #pragma endregion
