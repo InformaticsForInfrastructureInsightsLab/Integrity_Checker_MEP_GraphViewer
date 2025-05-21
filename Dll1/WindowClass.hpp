@@ -225,5 +225,5 @@ public:
 
     void CreateColumn();
     void AddItems(nlohmann::json context);
-    void AddStringComboBox();
+    void AddStringComboBox(nlohmann::json key);
 };

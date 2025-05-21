@@ -100,8 +100,6 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 200, 200,
                 m_hwnd, (HMENU)(5000 + i), GetModuleHandle(NULL), nullptr);
         }
-        
-        AddStringComboBox();
     }
         break;  
     case WM_SIZE: {
@@ -313,22 +311,50 @@ void MainWindow::AddItems(nlohmann::json context) {
     }
 }
 
-void MainWindow::AddStringComboBox() {
-    ComboBox_AddString(dropdowns[0], L"IfcBeam");
-    ComboBox_AddString(dropdowns[0], L"IfcBuildingElementProxy");
-    ComboBox_AddString(dropdowns[0], L"IfcCableCarrierSegment");
-    ComboBox_AddString(dropdowns[0], L"IfcColumn");
-    ComboBox_AddString(dropdowns[0], L"IfcCovering");
-    ComboBox_AddString(dropdowns[0], L"IfcDoor");
-    ComboBox_AddString(dropdowns[0], L"IfcDuctSegment");
-    ComboBox_AddString(dropdowns[0], L"IfcMember");
-    ComboBox_AddString(dropdowns[0], L"IfcPipeSegment");
-    ComboBox_AddString(dropdowns[0], L"IfcRailing");
-    ComboBox_AddString(dropdowns[0], L"IfcSlab");
-    ComboBox_AddString(dropdowns[0], L"IfcSpace");
-    ComboBox_AddString(dropdowns[0], L"IfcStairFlight");
-    ComboBox_AddString(dropdowns[0], L"IfcWall");
-    SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"ElementType1");
+void MainWindow::AddStringComboBox(nlohmann::json key) {
+    SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"Elem Type 1");
+
+    ComboBox_AddString(dropdowns[1], L"Hard");
+    ComboBox_AddString(dropdowns[1], L"Soft");
+    SendMessage(dropdowns[1], CB_SETCUEBANNER, FALSE, (LPARAM)L"Clash Type");
+
+    ComboBox_AddString(dropdowns[2], L"Major");
+    ComboBox_AddString(dropdowns[2], L"Medium");
+    ComboBox_AddString(dropdowns[2], L"Minor");
+    SendMessage(dropdowns[2], CB_SETCUEBANNER, FALSE, (LPARAM)L"Severity Before Adjusting");
+
+    SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"Elem Type 2");
+    SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"Clash Category");
+
+    ComboBox_AddString(dropdowns[5], L"Major");
+    ComboBox_AddString(dropdowns[5], L"Medium");
+    ComboBox_AddString(dropdowns[5], L"Minor");
+    SendMessage(dropdowns[5], CB_SETCUEBANNER, FALSE, (LPARAM)L"Severity After Adjusting");
+
+    try {
+        for (auto& list : key["ElemTypesList"]) {
+            for (auto& elemType : list) {
+                ComboBox_AddString(dropdowns[0], StringToLpwstr(elemType));
+                ComboBox_AddString(dropdowns[3], StringToLpwstr(elemType));
+            }
+        }
+        for (auto& list : key["ClashTypes"]) {
+            for (auto& ClashType : list) {
+                ComboBox_AddString(dropdowns[4], StringToLpwstr(ClashType));
+            }
+        }
+    }
+    catch (std::exception& e) {
+        wchar_t wcStr[4096];
+        size_t conv_chars;
+        int len = (int)strlen(e.what()) + 1;
+        errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
+        MessageBox(win.m_hwnd, wcStr, L"ERROR", MB_OK);
+
+        if (err != 0)
+            return;
+    }
+
 }
 
 #pragma endregion
