@@ -388,6 +388,43 @@ void MainWindow::MakeSentence() {
         SendMessage(dropdowns[i], CB_GETLBTEXT, idx, (LPARAM)&word[i][0]);
         word[i].resize(len);
     }
+
+    std::wstring sentence;
+    if (word[0].length()) {
+        sentence = std::wstring(
+            std::wstring(L"한 부재가 ") + word[0] + std::wstring(L", ")
+        );
+    }
+    if (word[3].length()) {
+        sentence += std::wstring(
+            std::wstring(L"한 부재가 ") + word[3] + std::wstring(L", ")
+        );
+    }
+    if (word[1].length()) {
+        sentence += std::wstring(
+            std::wstring(L"간섭 종류가 ") + word[1] + std::wstring(L", ")
+        );
+    }
+    if (word[4].length()) {
+        sentence += std::wstring(
+            std::wstring(L"간섭 유형이 ") + word[4] + std::wstring(L", ")
+        );
+    }
+    if (word[2].length()) {
+        sentence += std::wstring(
+            std::wstring(L"조정 전 심각도가 ") + word[2] + std::wstring(L", ")
+        );
+    }
+    if (word[5].length()) {
+        sentence += std::wstring(
+            std::wstring(L"조정 후 심각도가 ") + word[5] + std::wstring(L", ")
+        );
+    }
+
+    if (!sentence.empty()) {
+        sentence.erase(sentence.size() - 2, 2);
+    }
+    SetWindowText(hEdit, sentence.c_str());
 }
 
 #pragma endregion
