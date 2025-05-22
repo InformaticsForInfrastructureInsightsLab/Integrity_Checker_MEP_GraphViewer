@@ -89,9 +89,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
 
-        hGroup = CreateWindowEx(0, WC_BUTTON, L"Easy Search",
-            WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
-            10, height * 0.8, width * 0.8, height * 0.2 - 10, m_hwnd, nullptr, GetModuleHandle(NULL), nullptr);
+        hGroup = CreateWindowEx(WS_EX_TRANSPARENT, WC_STATIC, L"Easy Search",
+            WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_GROUPBOX,
+            10, height * 0.8, width  - 20, height * 0.2 - 10, m_hwnd, nullptr, GetModuleHandle(NULL), nullptr);
 
         for (int i = 0; i < dropdowns.size();i++) {
             dropdowns[i] = CreateWindowEx(WS_EX_CLIENTEDGE, WC_COMBOBOX, L"",
@@ -100,20 +100,34 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 200, 200,
                 m_hwnd, (HMENU)(5000 + i), GetModuleHandle(NULL), nullptr);
         }
+
+        hButtonMakeSentence = CreateWindowEx(
+            0 , L"BUTTON", L"done",
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
+            width * 0.8 + 10, height * 0.8+30, width * 0.2 - 20, height * 0.1,
+            m_hwnd, (HMENU)2002, GetModuleHandle(NULL), nullptr
+        );
+        if (!hButtonMakeSentence) {
+            MessageBox(m_hwnd, L"button fail", L" ", MB_OK);
+        }
     }
         break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-        HDWP hdwp = BeginDeferWindowPos(5);
-		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.65, width * 0.8, height * 0.15 - 10, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.5, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.5, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.5 + 10, width - 20, height * 0.15 - 20, SWP_NOZORDER);
-        hdwp = DeferWindowPos(hdwp, hGroup, NULL, 10, height * 0.8, width * 0.8, height * 0.2 - 10, SWP_NOZORDER);
+        HDWP hdwp = BeginDeferWindowPos(6);
+		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.65, width * 0.8, height * 0.15 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.5, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.5, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.5 + 10, width - 20, height * 0.15 - 20, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+        hdwp = DeferWindowPos(hdwp, hGroup, NULL, 10, height * 0.8, width - 20, height * 0.2 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
 		EndDeferWindowPos(hdwp);
+
+        RedrawWindow(m_hwnd, NULL, NULL,
+            RDW_INVALIDATE | RDW_ERASE |
+            RDW_UPDATENOW | RDW_ALLCHILDREN);
 
         panel.width = width * 0.7 - 10;
 		panel.height = height * 0.5;
@@ -145,6 +159,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
+        }
+        if (LOWORD(wParam) == 2002) {
+            MakeSentence();
         }
         break;
     case WM_CLOSE:
@@ -355,6 +372,22 @@ void MainWindow::AddStringComboBox(nlohmann::json key) {
             return;
     }
 
+}
+
+void MainWindow::MakeSentence() {
+    std::vector<std::wstring> word(6);
+
+    for (int i = 0; i < 6; i++) {
+        int idx = (int)SendMessage(dropdowns[i], CB_GETCURSEL, 0, 0);
+        if (idx == CB_ERR) continue;
+
+        int len = (int)SendMessage(dropdowns[i], CB_GETLBTEXTLEN, idx, 0);
+        if (len == CB_ERR) continue;
+
+        word[i].resize(len + 1);
+        SendMessage(dropdowns[i], CB_GETLBTEXT, idx, (LPARAM)&word[i][0]);
+        word[i].resize(len);
+    }
 }
 
 #pragma endregion
