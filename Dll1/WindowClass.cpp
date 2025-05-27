@@ -49,7 +49,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         int width = rect.right - rect.left;
         int height = rect.bottom - rect.top;
 
-        // ì‚¬ìš©ìž ìž…ë ¥ ì¹¸ (Edit Control) ìƒì„±
+        // »ç¿ëÀÚ ÀÔ·Â Ä­ (Edit Control) »ý¼º
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
@@ -58,7 +58,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             GetModuleHandle(NULL), nullptr
         );
 
-        // ë²„íŠ¼ ìƒì„±
+        // ¹öÆ° »ý¼º
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
@@ -75,14 +75,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         );
         CreateColumn();
 
-        // ê·¸ëž˜í”„ íŒ¨ë„
+        // ±×·¡ÇÁ ÆÐ³Î
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_BORDER, 0,
             10, 0, width * 0.7 - 10, height * 0.5, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
-        // ì±„íŒ… íŒ¨ë„
+        // Ã¤ÆÃ ÆÐ³Î
         if (!chatPanel.Create(L"ChattingPanel",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS, 0,
             10, height * 0.5 + 10, width - 20, height * 0.15 - 20, m_hwnd, (HMENU)3003)) {
@@ -329,24 +329,24 @@ void MainWindow::AddItems(nlohmann::json context) {
 }
 
 void MainWindow::AddStringComboBox(nlohmann::json key) {
-    SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"Elem Type 1");
+    SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"°£¼· ºÎÀç 1");
 
     ComboBox_AddString(dropdowns[1], L"Hard");
     ComboBox_AddString(dropdowns[1], L"Soft");
-    SendMessage(dropdowns[1], CB_SETCUEBANNER, FALSE, (LPARAM)L"Clash Type");
+    SendMessage(dropdowns[1], CB_SETCUEBANNER, FALSE, (LPARAM)L"°£¼· Á¾·ù");
 
     ComboBox_AddString(dropdowns[2], L"Major");
     ComboBox_AddString(dropdowns[2], L"Medium");
     ComboBox_AddString(dropdowns[2], L"Minor");
-    SendMessage(dropdowns[2], CB_SETCUEBANNER, FALSE, (LPARAM)L"Severity Before Adjusting");
+    SendMessage(dropdowns[2], CB_SETCUEBANNER, FALSE, (LPARAM)L"Á¶Á¤ Àü ½É°¢µµ");
 
-    SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"Elem Type 2");
-    SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"Clash Category");
+    SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"°£¼· ºÎÀç 2");
+    SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"°£¼· À¯Çü");
 
     ComboBox_AddString(dropdowns[5], L"Major");
     ComboBox_AddString(dropdowns[5], L"Medium");
     ComboBox_AddString(dropdowns[5], L"Minor");
-    SendMessage(dropdowns[5], CB_SETCUEBANNER, FALSE, (LPARAM)L"Severity After Adjusting");
+    SendMessage(dropdowns[5], CB_SETCUEBANNER, FALSE, (LPARAM)L"Á¶Á¤ ÈÄ ½É°¢µµ");
 
     try {
         for (auto& list : key["ElemTypesList"]) {
@@ -392,32 +392,32 @@ void MainWindow::MakeSentence() {
     std::wstring sentence;
     if (word[0].length()) {
         sentence = std::wstring(
-            std::wstring(L"í•œ ë¶€ìž¬ê°€ ") + word[0] + std::wstring(L", ")
+            std::wstring(L"ÇÑ ºÎÀç°¡ ") + word[0] + std::wstring(L", ")
         );
     }
     if (word[3].length()) {
         sentence += std::wstring(
-            std::wstring(L"í•œ ë¶€ìž¬ê°€ ") + word[3] + std::wstring(L", ")
+            std::wstring(L"ÇÑ ºÎÀç°¡ ") + word[3] + std::wstring(L", ")
         );
     }
     if (word[1].length()) {
         sentence += std::wstring(
-            std::wstring(L"ê°„ì„­ ì¢…ë¥˜ê°€ ") + word[1] + std::wstring(L", ")
+            std::wstring(L"°£¼· Á¾·ù°¡ ") + word[1] + std::wstring(L", ")
         );
     }
     if (word[4].length()) {
         sentence += std::wstring(
-            std::wstring(L"ê°„ì„­ ìœ í˜•ì´ ") + word[4] + std::wstring(L", ")
+            std::wstring(L"°£¼· À¯ÇüÀÌ ") + word[4] + std::wstring(L", ")
         );
     }
     if (word[2].length()) {
         sentence += std::wstring(
-            std::wstring(L"ì¡°ì • ì „ ì‹¬ê°ë„ê°€ ") + word[2] + std::wstring(L", ")
+            std::wstring(L"Á¶Á¤ Àü ½É°¢µµ°¡ ") + word[2] + std::wstring(L", ")
         );
     }
     if (word[5].length()) {
         sentence += std::wstring(
-            std::wstring(L"ì¡°ì • í›„ ì‹¬ê°ë„ê°€ ") + word[5] + std::wstring(L", ")
+            std::wstring(L"Á¶Á¤ ÈÄ ½É°¢µµ°¡ ") + word[5] + std::wstring(L", ")
         );
     }
 
@@ -480,12 +480,12 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
 
-        // 1. ë°±ë²„í¼ ìƒì„± (ë©”ëª¨ë¦¬ DC)
+        // 1. ¹é¹öÆÛ »ý¼º (¸Þ¸ð¸® DC)
         HDC hMemDC = CreateCompatibleDC(hdc);
         HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
 
-        // ë°°ê²½ì„ í°ìƒ‰ìœ¼ë¡œ ì§€ì›€
+        // ¹è°æÀ» Èò»öÀ¸·Î Áö¿ò
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
         if (!graph) break;
@@ -535,7 +535,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 
-        // 5. ë¦¬ì†ŒìŠ¤ ì •ë¦¬
+        // 5. ¸®¼Ò½º Á¤¸®
         SelectObject(hMemDC, hOldBitmap);
         DeleteObject(hBitmap);
         DeleteDC(hMemDC);
@@ -544,20 +544,20 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     case WM_MOUSEWHEEL: {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // íœ  ë°©í–¥ (120 ë˜ëŠ” -120)
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // ÈÙ ¹æÇâ (120 ¶Ç´Â -120)
         POINT cursor;
         GetCursorPos(&cursor);
-        ScreenToClient(m_hwnd, &cursor);  // ìœˆë„ìš° ê¸°ì¤€ ì¢Œí‘œë¡œ ë³€í™˜
+        ScreenToClient(m_hwnd, &cursor);  // À©µµ¿ì ±âÁØ ÁÂÇ¥·Î º¯È¯
 
         double oldScale = scale;
         scale += (delta > 0) ? 0.1 : -0.1;
         if (scale < 0.1) scale = 0.1;
 
-        // ë§ˆìš°ìŠ¤ ì¢Œí‘œ ì¤‘ì‹¬ìœ¼ë¡œ í™•ëŒ€/ì¶•ì†Œ ë³€í™˜
+        // ¸¶¿ì½º ÁÂÇ¥ Áß½ÉÀ¸·Î È®´ë/Ãà¼Ò º¯È¯
         offsetX = cursor.x - (cursor.x - offsetX) * (scale / oldScale);
         offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
-        // ì»¤ìŠ¤í…€ ì´ë²¤íŠ¸ë¡œ ì› ë‹¤ì‹œ ê·¸ë¦¬ê¸° ìš”ì²­
+        // Ä¿½ºÅÒ ÀÌº¥Æ®·Î ¿ø ´Ù½Ã ±×¸®±â ¿äÃ»
         RECT wnd_sz = { 0,0,width, height };
         InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
@@ -674,7 +674,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         int newMsgHeight = AddMessageAndMeasure(hdc, messages.back(), box_max_width, r, totalContentHeight);
         ReleaseDC(m_hwnd, hdc);
 
-        // ê¸°ì¡´ ë‚´ìš© ìœ„ë¡œ ìŠ¤í¬ë¡¤
+        // ±âÁ¸ ³»¿ë À§·Î ½ºÅ©·Ñ
         ScrollWindowEx(m_hwnd, 0, -newMsgHeight, NULL, NULL, NULL, NULL, SW_INVALIDATE);
         totalContentHeight += newMsgHeight + 10;
 
@@ -682,7 +682,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
 
-        // ìŠ¤í¬ë¡¤ ì •ë³´ ê°±ì‹ 
+        // ½ºÅ©·Ñ Á¤º¸ °»½Å
         SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
         si.nMin = 0;
         si.nMax = totalContentHeight;
@@ -690,7 +690,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         si.nPos = scrollOffset;
         SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
 
-        // í•˜ë‹¨ ìƒˆ ë©”ì‹œì§€ ì˜ì—­ë§Œ ë‹¤ì‹œ ê·¸ë¦¼
+        // ÇÏ´Ü »õ ¸Þ½ÃÁö ¿µ¿ª¸¸ ´Ù½Ã ±×¸²
         RECT invalidRect = { 0, height - newMsgHeight, width, height };
         InvalidateRect(m_hwnd, &invalidRect, TRUE);
         break;
