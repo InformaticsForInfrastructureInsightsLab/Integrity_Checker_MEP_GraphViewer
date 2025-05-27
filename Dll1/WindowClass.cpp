@@ -329,20 +329,27 @@ void MainWindow::AddItems(nlohmann::json context) {
 }
 
 void MainWindow::AddStringComboBox(nlohmann::json key) {
+    ComboBox_AddString(dropdowns[0], (LPARAM)L"간섭 부재 1");
     SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 부재 1");
 
+    ComboBox_AddString(dropdowns[1], L"간섭 종류");
     ComboBox_AddString(dropdowns[1], L"Hard");
     ComboBox_AddString(dropdowns[1], L"Soft");
     SendMessage(dropdowns[1], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 종류");
 
+    ComboBox_AddString(dropdowns[2], L"조정 전 심각도");
     ComboBox_AddString(dropdowns[2], L"Major");
     ComboBox_AddString(dropdowns[2], L"Medium");
     ComboBox_AddString(dropdowns[2], L"Minor");
     SendMessage(dropdowns[2], CB_SETCUEBANNER, FALSE, (LPARAM)L"조정 전 심각도");
 
+    ComboBox_AddString(dropdowns[3], (LPARAM)L"간섭 부재 2");
     SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 부재 2");
+
+    ComboBox_AddString(dropdowns[4], (LPARAM)L"간섭 유형");
     SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 유형");
 
+    ComboBox_AddString(dropdowns[5], (LPARAM)L"조정 후 심각도");
     ComboBox_AddString(dropdowns[5], L"Major");
     ComboBox_AddString(dropdowns[5], L"Medium");
     ComboBox_AddString(dropdowns[5], L"Minor");
@@ -371,7 +378,13 @@ void MainWindow::AddStringComboBox(nlohmann::json key) {
         if (err != 0)
             return;
     }
-
+    
+    for (HWND listbox : dropdowns) {
+        int actual = ListBox_SetTopIndex(listbox, 1);
+        if (actual == LB_ERR) {
+            MessageBox(m_hwnd, L"asdf", L" ", MB_OK);
+        }
+    }
 }
 
 void MainWindow::MakeSentence() {
@@ -390,32 +403,32 @@ void MainWindow::MakeSentence() {
     }
 
     std::wstring sentence;
-    if (word[0].length()) {
+    if (word[0] != L"간섭 부재 1" && !word[0].empty()) {
         sentence = std::wstring(
             std::wstring(L"한 부재가 ") + word[0] + std::wstring(L", ")
         );
     }
-    if (word[3].length()) {
+    if (word[3] != L"간섭 부재 2" && !word[3].empty()) {
         sentence += std::wstring(
             std::wstring(L"한 부재가 ") + word[3] + std::wstring(L", ")
         );
     }
-    if (word[1].length()) {
+    if (word[1] != L"간섭 종류" && !word[1].empty()) {
         sentence += std::wstring(
             std::wstring(L"간섭 종류가 ") + word[1] + std::wstring(L", ")
         );
     }
-    if (word[4].length()) {
+    if (word[4] != L"간섭 유형" && !word[4].empty()) {
         sentence += std::wstring(
             std::wstring(L"간섭 유형이 ") + word[4] + std::wstring(L", ")
         );
     }
-    if (word[2].length()) {
+    if (word[2] != L"조정 전 심각도" && !word[2].empty()) {
         sentence += std::wstring(
             std::wstring(L"조정 전 심각도가 ") + word[2] + std::wstring(L", ")
         );
     }
-    if (word[5].length()) {
+    if (word[5] != L"조정 후 심각도" && !word[5].empty()) {
         sentence += std::wstring(
             std::wstring(L"조정 후 심각도가 ") + word[5] + std::wstring(L", ")
         );
@@ -424,6 +437,7 @@ void MainWindow::MakeSentence() {
     if (!sentence.empty()) {
         sentence.erase(sentence.size() - 2, 2);
     }
+    sentence += std::wstring(L"인 간섭을 찾아줘");
     SetWindowText(hEdit, sentence.c_str());
 }
 
