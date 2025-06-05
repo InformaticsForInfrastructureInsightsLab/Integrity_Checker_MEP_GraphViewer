@@ -208,7 +208,7 @@ public:
         hButton = nullptr;
         hScroll = nullptr;
         hListView = nullptr;
-        dropdowns = std::vector<HWND>(6);
+        dropdowns = std::vector<HWND>(8);
         hGroup = nullptr;
         hButtonMakeSentence = nullptr;
     }

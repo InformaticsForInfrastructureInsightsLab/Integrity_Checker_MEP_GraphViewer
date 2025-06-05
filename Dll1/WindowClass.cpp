@@ -96,7 +96,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         for (int i = 0; i < dropdowns.size();i++) {
             dropdowns[i] = CreateWindowEx(WS_EX_CLIENTEDGE, WC_COMBOBOX, L"",
                 WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
-                20 + (200 * (i % 3)) + (20 * (i % 3)), height * 0.8 + 50 * (i / 3) + 30,
+                20 + (200 * (i % 4)) + (20 * (i % 4)), height * 0.8 + 50 * (i / 4) + 30,
                 200, 200,
                 m_hwnd, (HMENU)(5000 + i), GetModuleHandle(NULL), nullptr);
         }
@@ -104,7 +104,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         hButtonMakeSentence = CreateWindowEx(
             0 , L"BUTTON", L"done",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
-            width * 0.8 + 10, height * 0.8+30, width * 0.2 - 20, height * 0.1,
+            width * 0.9 + 10, height * 0.8+30, width * 0.1 - 20, height * 0.1,
             m_hwnd, (HMENU)2002, GetModuleHandle(NULL), nullptr
         );
         if (!hButtonMakeSentence) {
@@ -343,28 +343,41 @@ void MainWindow::AddStringComboBox(nlohmann::json key) {
     ComboBox_AddString(dropdowns[2], L"Minor");
     SendMessage(dropdowns[2], CB_SETCUEBANNER, FALSE, (LPARAM)L"조정 전 심각도");
 
-    ComboBox_AddString(dropdowns[3], (LPARAM)L"간섭 부재 2");
-    SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 부재 2");
+    ComboBox_AddString(dropdowns[3], (LPARAM)L"관통성");
+    ComboBox_AddString(dropdowns[3], L"Installable (Diagonal)");
+    ComboBox_AddString(dropdowns[3], L"Installable (Horizontal)");
+    ComboBox_AddString(dropdowns[3], L"Installable (Vertical)");
+    ComboBox_AddString(dropdowns[3], L"Not installable");
+    SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"관통성");
 
-    ComboBox_AddString(dropdowns[4], (LPARAM)L"간섭 유형");
-    SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 유형");
+    ComboBox_AddString(dropdowns[4], (LPARAM)L"간섭 부재 2");
+    SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 부재 2");
 
-    ComboBox_AddString(dropdowns[5], (LPARAM)L"조정 후 심각도");
-    ComboBox_AddString(dropdowns[5], L"Major");
-    ComboBox_AddString(dropdowns[5], L"Medium");
-    ComboBox_AddString(dropdowns[5], L"Minor");
-    SendMessage(dropdowns[5], CB_SETCUEBANNER, FALSE, (LPARAM)L"조정 후 심각도");
+    ComboBox_AddString(dropdowns[5], (LPARAM)L"간섭 유형");
+    SendMessage(dropdowns[5], CB_SETCUEBANNER, FALSE, (LPARAM)L"간섭 유형");
+
+    ComboBox_AddString(dropdowns[6], (LPARAM)L"조정 후 심각도");
+    ComboBox_AddString(dropdowns[6], L"Major");
+    ComboBox_AddString(dropdowns[6], L"Medium");
+    ComboBox_AddString(dropdowns[6], L"Minor");
+    SendMessage(dropdowns[6], CB_SETCUEBANNER, FALSE, (LPARAM)L"조정 후 심각도");
+
+    ComboBox_AddString(dropdowns[7], (LPARAM)L"가동성");
+    ComboBox_AddString(dropdowns[7], L"Major");
+    ComboBox_AddString(dropdowns[7], L"Medium");
+    ComboBox_AddString(dropdowns[7], L"Minor");
+    SendMessage(dropdowns[7], CB_SETCUEBANNER, FALSE, (LPARAM)L"가동성");
 
     try {
         for (auto& list : key["ElemTypesList"]) {
             for (auto& elemType : list) {
                 ComboBox_AddString(dropdowns[0], StringToLpwstr(elemType));
-                ComboBox_AddString(dropdowns[3], StringToLpwstr(elemType));
+                ComboBox_AddString(dropdowns[4], StringToLpwstr(elemType));
             }
         }
         for (auto& list : key["ClashTypes"]) {
             for (auto& ClashType : list) {
-                ComboBox_AddString(dropdowns[4], StringToLpwstr(ClashType));
+                ComboBox_AddString(dropdowns[5], StringToLpwstr(ClashType));
             }
         }
     }
@@ -388,9 +401,9 @@ void MainWindow::AddStringComboBox(nlohmann::json key) {
 }
 
 void MainWindow::MakeSentence() {
-    std::vector<std::wstring> word(6);
+    std::vector<std::wstring> word(8);
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 8; i++) {
         int idx = (int)SendMessage(dropdowns[i], CB_GETCURSEL, 0, 0);
         if (idx == CB_ERR) continue;
 
@@ -408,9 +421,9 @@ void MainWindow::MakeSentence() {
             std::wstring(L"한 부재가 ") + word[0] + std::wstring(L", ")
         );
     }
-    if (word[3] != L"간섭 부재 2" && !word[3].empty()) {
+    if (word[4] != L"간섭 부재 2" && !word[4].empty()) {
         sentence += std::wstring(
-            std::wstring(L"한 부재가 ") + word[3] + std::wstring(L", ")
+            std::wstring(L"한 부재가 ") + word[4] + std::wstring(L", ")
         );
     }
     if (word[1] != L"간섭 종류" && !word[1].empty()) {
@@ -418,9 +431,9 @@ void MainWindow::MakeSentence() {
             std::wstring(L"간섭 종류가 ") + word[1] + std::wstring(L", ")
         );
     }
-    if (word[4] != L"간섭 유형" && !word[4].empty()) {
+    if (word[5] != L"간섭 유형" && !word[5].empty()) {
         sentence += std::wstring(
-            std::wstring(L"간섭 유형이 ") + word[4] + std::wstring(L", ")
+            std::wstring(L"간섭 유형이 ") + word[5] + std::wstring(L", ")
         );
     }
     if (word[2] != L"조정 전 심각도" && !word[2].empty()) {
@@ -428,9 +441,19 @@ void MainWindow::MakeSentence() {
             std::wstring(L"조정 전 심각도가 ") + word[2] + std::wstring(L", ")
         );
     }
-    if (word[5] != L"조정 후 심각도" && !word[5].empty()) {
+    if (word[6] != L"조정 후 심각도" && !word[6].empty()) {
         sentence += std::wstring(
-            std::wstring(L"조정 후 심각도가 ") + word[5] + std::wstring(L", ")
+            std::wstring(L"조정 후 심각도가 ") + word[6] + std::wstring(L", ")
+        );
+    }
+    if (word[3] != L"관통성" && !word[3].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"관통성이 ") + word[3] + std::wstring(L", ")
+        );
+    }
+    if (word[7] != L"가동성" && !word[7].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"가동성이 ") + word[7] + std::wstring(L", ")
         );
     }
 
