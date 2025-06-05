@@ -198,14 +198,19 @@ private:
 
 class MainWindow : public BaseWindow<MainWindow> {
 public:
-    HWND hEdit, hButton, hScroll;
+    HWND hEdit, hButton, hScroll, hGroup, hButtonMakeSentence;
     HWND hListView;
+
+    std::vector<HWND> dropdowns;
 public:
     MainWindow() {
         hEdit = nullptr;
         hButton = nullptr;
         hScroll = nullptr;
         hListView = nullptr;
+        dropdowns = std::vector<HWND>(8);
+        hGroup = nullptr;
+        hButtonMakeSentence = nullptr;
     }
 
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -222,4 +227,6 @@ public:
 
     void CreateColumn();
     void AddItems(nlohmann::json context);
+    void AddStringComboBox(nlohmann::json key);
+    void MakeSentence();
 };

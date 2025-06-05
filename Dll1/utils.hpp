@@ -28,4 +28,6 @@ extern "C" {
 
 	// get string from extern process
 	__declspec(dllexport) void ForwardAnswer(LPWSTR result, LPWSTR context);
+
+	__declspec(dllexport) void ForwardGraphKey(const char* key);
 }

@@ -95,4 +95,10 @@ extern "C" {
 				return;
 		}
 	}
+
+	__declspec(dllexport) void ForwardGraphKey(const char* key) {
+		std::string str(key);
+		nlohmann::json json = nlohmann::json::parse(str);
+		win.AddStringComboBox(json);
+	}
 }

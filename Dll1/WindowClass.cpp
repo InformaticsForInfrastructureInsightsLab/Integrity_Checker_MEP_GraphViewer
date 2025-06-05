@@ -44,69 +44,96 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
     case WM_CREATE: {
         RECT rect;
-		GetClientRect(m_hwnd, &rect);
+        GetClientRect(m_hwnd, &rect);
 
-		int width = rect.right - rect.left;
-		int height = rect.bottom - rect.top;
+        int width = rect.right - rect.left;
+        int height = rect.bottom - rect.top;
 
-        // ÏÇ¨Ïö©Ïûê ÏûÖÎ†• Ïπ∏ (Edit Control) ÏÉùÏÑ±
+        // ªÁøÎ¿⁄ ¿‘∑¬ ƒ≠ (Edit Control) ª˝º∫
         hEdit = CreateWindowEx(
             0, L"EDIT", L"",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
-            10, height * 0.85, width * 0.8, height * 0.15 - 10,
+            10, height * 0.65, width * 0.8, height * 0.15 - 10,
             m_hwnd, (HMENU)1001,
             GetModuleHandle(NULL), nullptr
         );
 
-        // Î≤ÑÌäº ÏÉùÏÑ±
+        // πˆ∆∞ ª˝º∫
         hButton = CreateWindowEx(
             0, L"BUTTON", L"SEND",
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
-            width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10,
+            width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10,
             m_hwnd, (HMENU)2001, GetModuleHandle(NULL), nullptr
         );
         hListView = CreateWindowEx(
             0, WC_LISTVIEW, L" ",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS | LVS_REPORT,
-            width * 0.7, 0, width * 0.3 - 10, height * 0.6, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
+            width * 0.7, 0, width * 0.3 - 10, height * 0.5, m_hwnd, (HMENU)3002, GetModuleHandle(NULL), NULL);
         ListView_SetExtendedListViewStyle(
             hListView,
             LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER
         );
         CreateColumn();
 
-        // Í∑∏ÎûòÌîÑ Ìå®ÎÑê
+        // ±◊∑°«¡ ∆–≥Œ
         if (!panel.Create(L"GraphPanel",
             WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_BORDER, 0,
-            10, 0, width*0.7 - 10, height*0.6, m_hwnd, (HMENU)3001)) {
+            10, 0, width * 0.7 - 10, height * 0.5, m_hwnd, (HMENU)3001)) {
             MessageBox(m_hwnd, L"panel create fail", L" ", MB_OK);
         }
 
-        // Ï±ÑÌåÖ Ìå®ÎÑê
+        // √§∆√ ∆–≥Œ
         if (!chatPanel.Create(L"ChattingPanel",
             WS_CHILD | WS_VISIBLE | WS_BORDER | WS_CLIPSIBLINGS, 0,
-            10, height*0.6+10, width-20, height*0.25-20, m_hwnd, (HMENU)3003)) {
+            10, height * 0.5 + 10, width - 20, height * 0.15 - 20, m_hwnd, (HMENU)3003)) {
             MessageBox(m_hwnd, L"chatting panel create fail", L" ", MB_OK);
         }
+
+        hGroup = CreateWindowEx(WS_EX_TRANSPARENT, WC_STATIC, L"Easy Search",
+            WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_GROUPBOX,
+            10, height * 0.8, width  - 20, height * 0.2 - 10, m_hwnd, nullptr, GetModuleHandle(NULL), nullptr);
+
+        for (int i = 0; i < dropdowns.size();i++) {
+            dropdowns[i] = CreateWindowEx(WS_EX_CLIENTEDGE, WC_COMBOBOX, L"",
+                WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
+                20 + (200 * (i % 4)) + (20 * (i % 4)), height * 0.8 + 50 * (i / 4) + 30,
+                200, 200,
+                m_hwnd, (HMENU)(5000 + i), GetModuleHandle(NULL), nullptr);
         }
+
+        hButtonMakeSentence = CreateWindowEx(
+            0 , L"BUTTON", L"done",
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | BS_DEFPUSHBUTTON,
+            width * 0.9 + 10, height * 0.8+30, width * 0.1 - 20, height * 0.1,
+            m_hwnd, (HMENU)2002, GetModuleHandle(NULL), nullptr
+        );
+        if (!hButtonMakeSentence) {
+            MessageBox(m_hwnd, L"button fail", L" ", MB_OK);
+        }
+    }
         break;  
     case WM_SIZE: {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-        HDWP hdwp = BeginDeferWindowPos(5);
-		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.85, width * 0.8, height * 0.15 - 10, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.85, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.6, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.6, SWP_NOZORDER);
-		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.6 + 10, width - 20, height * 0.25 - 20, SWP_NOZORDER);
+        HDWP hdwp = BeginDeferWindowPos(6);
+		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.65, width * 0.8, height * 0.15 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.5, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.5, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.5 + 10, width - 20, height * 0.15 - 20, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+        hdwp = DeferWindowPos(hdwp, hGroup, NULL, 10, height * 0.8, width - 20, height * 0.2 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
 		EndDeferWindowPos(hdwp);
 
+        RedrawWindow(m_hwnd, NULL, NULL,
+            RDW_INVALIDATE | RDW_ERASE |
+            RDW_UPDATENOW | RDW_ALLCHILDREN);
+
         panel.width = width * 0.7 - 10;
-		panel.height = height * 0.6;
+		panel.height = height * 0.5;
 		InvalidateRect(panel.m_hwnd, NULL, TRUE);
 		chatPanel.width = width - 20;
-		chatPanel.height = height * 0.25 - 20;
+		chatPanel.height = height * 0.15 - 20;
 		InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
         UpdateWindow(m_hwnd);
@@ -132,6 +159,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     case WM_COMMAND:
         if (LOWORD(wParam) == 2001) {
             g_callback();
+        }
+        if (LOWORD(wParam) == 2002) {
+            MakeSentence();
         }
         break;
     case WM_CLOSE:
@@ -298,6 +328,142 @@ void MainWindow::AddItems(nlohmann::json context) {
     }
 }
 
+void MainWindow::AddStringComboBox(nlohmann::json key) {
+    ComboBox_AddString(dropdowns[0], (LPARAM)L"∞£º∑ ∫Œ¿Á 1");
+    SendMessage(dropdowns[0], CB_SETCUEBANNER, FALSE, (LPARAM)L"∞£º∑ ∫Œ¿Á 1");
+
+    ComboBox_AddString(dropdowns[1], L"∞£º∑ ¡æ∑˘");
+    ComboBox_AddString(dropdowns[1], L"Hard");
+    ComboBox_AddString(dropdowns[1], L"Soft");
+    SendMessage(dropdowns[1], CB_SETCUEBANNER, FALSE, (LPARAM)L"∞£º∑ ¡æ∑˘");
+
+    ComboBox_AddString(dropdowns[2], L"¡∂¡§ ¿¸ Ω…∞¢µµ");
+    ComboBox_AddString(dropdowns[2], L"Major");
+    ComboBox_AddString(dropdowns[2], L"Medium");
+    ComboBox_AddString(dropdowns[2], L"Minor");
+    SendMessage(dropdowns[2], CB_SETCUEBANNER, FALSE, (LPARAM)L"¡∂¡§ ¿¸ Ω…∞¢µµ");
+
+    ComboBox_AddString(dropdowns[3], (LPARAM)L"∞¸≈Îº∫");
+    ComboBox_AddString(dropdowns[3], L"Installable (Diagonal)");
+    ComboBox_AddString(dropdowns[3], L"Installable (Horizontal)");
+    ComboBox_AddString(dropdowns[3], L"Installable (Vertical)");
+    ComboBox_AddString(dropdowns[3], L"Not installable");
+    SendMessage(dropdowns[3], CB_SETCUEBANNER, FALSE, (LPARAM)L"∞¸≈Îº∫");
+
+    ComboBox_AddString(dropdowns[4], (LPARAM)L"∞£º∑ ∫Œ¿Á 2");
+    SendMessage(dropdowns[4], CB_SETCUEBANNER, FALSE, (LPARAM)L"∞£º∑ ∫Œ¿Á 2");
+
+    ComboBox_AddString(dropdowns[5], (LPARAM)L"∞£º∑ ¿Ø«¸");
+    SendMessage(dropdowns[5], CB_SETCUEBANNER, FALSE, (LPARAM)L"∞£º∑ ¿Ø«¸");
+
+    ComboBox_AddString(dropdowns[6], (LPARAM)L"¡∂¡§ »ƒ Ω…∞¢µµ");
+    ComboBox_AddString(dropdowns[6], L"Major");
+    ComboBox_AddString(dropdowns[6], L"Medium");
+    ComboBox_AddString(dropdowns[6], L"Minor");
+    SendMessage(dropdowns[6], CB_SETCUEBANNER, FALSE, (LPARAM)L"¡∂¡§ »ƒ Ω…∞¢µµ");
+
+    ComboBox_AddString(dropdowns[7], (LPARAM)L"∞°µøº∫");
+    ComboBox_AddString(dropdowns[7], L"Major");
+    ComboBox_AddString(dropdowns[7], L"Medium");
+    ComboBox_AddString(dropdowns[7], L"Minor");
+    SendMessage(dropdowns[7], CB_SETCUEBANNER, FALSE, (LPARAM)L"∞°µøº∫");
+
+    try {
+        for (auto& list : key["ElemTypesList"]) {
+            for (auto& elemType : list) {
+                ComboBox_AddString(dropdowns[0], StringToLpwstr(elemType));
+                ComboBox_AddString(dropdowns[4], StringToLpwstr(elemType));
+            }
+        }
+        for (auto& list : key["ClashTypes"]) {
+            for (auto& ClashType : list) {
+                ComboBox_AddString(dropdowns[5], StringToLpwstr(ClashType));
+            }
+        }
+    }
+    catch (std::exception& e) {
+        wchar_t wcStr[4096];
+        size_t conv_chars;
+        int len = (int)strlen(e.what()) + 1;
+        errno_t err = mbstowcs_s(&conv_chars, wcStr, len, e.what(), _TRUNCATE);
+        MessageBox(win.m_hwnd, wcStr, L"ERROR", MB_OK);
+
+        if (err != 0)
+            return;
+    }
+    
+    for (HWND listbox : dropdowns) {
+        int actual = ListBox_SetTopIndex(listbox, 1);
+        if (actual == LB_ERR) {
+            MessageBox(m_hwnd, L"asdf", L" ", MB_OK);
+        }
+    }
+}
+
+void MainWindow::MakeSentence() {
+    std::vector<std::wstring> word(8);
+
+    for (int i = 0; i < 8; i++) {
+        int idx = (int)SendMessage(dropdowns[i], CB_GETCURSEL, 0, 0);
+        if (idx == CB_ERR) continue;
+
+        int len = (int)SendMessage(dropdowns[i], CB_GETLBTEXTLEN, idx, 0);
+        if (len == CB_ERR) continue;
+
+        word[i].resize(len + 1);
+        SendMessage(dropdowns[i], CB_GETLBTEXT, idx, (LPARAM)&word[i][0]);
+        word[i].resize(len);
+    }
+
+    std::wstring sentence;
+    if (word[0] != L"∞£º∑ ∫Œ¿Á 1" && !word[0].empty()) {
+        sentence = std::wstring(
+            std::wstring(L"«— ∫Œ¿Á∞° ") + word[0] + std::wstring(L", ")
+        );
+    }
+    if (word[4] != L"∞£º∑ ∫Œ¿Á 2" && !word[4].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"«— ∫Œ¿Á∞° ") + word[4] + std::wstring(L", ")
+        );
+    }
+    if (word[1] != L"∞£º∑ ¡æ∑˘" && !word[1].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"∞£º∑ ¡æ∑˘∞° ") + word[1] + std::wstring(L", ")
+        );
+    }
+    if (word[5] != L"∞£º∑ ¿Ø«¸" && !word[5].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"∞£º∑ ¿Ø«¸¿Ã ") + word[5] + std::wstring(L", ")
+        );
+    }
+    if (word[2] != L"¡∂¡§ ¿¸ Ω…∞¢µµ" && !word[2].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"¡∂¡§ ¿¸ Ω…∞¢µµ∞° ") + word[2] + std::wstring(L", ")
+        );
+    }
+    if (word[6] != L"¡∂¡§ »ƒ Ω…∞¢µµ" && !word[6].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"¡∂¡§ »ƒ Ω…∞¢µµ∞° ") + word[6] + std::wstring(L", ")
+        );
+    }
+    if (word[3] != L"∞¸≈Îº∫" && !word[3].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"∞¸≈Îº∫¿Ã ") + word[3] + std::wstring(L", ")
+        );
+    }
+    if (word[7] != L"∞°µøº∫" && !word[7].empty()) {
+        sentence += std::wstring(
+            std::wstring(L"∞°µøº∫¿Ã ") + word[7] + std::wstring(L", ")
+        );
+    }
+
+    if (!sentence.empty()) {
+        sentence.erase(sentence.size() - 2, 2);
+    }
+    sentence += std::wstring(L"¿Œ ∞£º∑¿ª √£æ∆¡‡");
+    SetWindowText(hEdit, sentence.c_str());
+}
+
 #pragma endregion
 
 
@@ -351,12 +517,12 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(m_hwnd, &ps);
 
-        // 1. Î∞±Î≤ÑÌçº ÏÉùÏÑ± (Î©îÎ™®Î¶¨ DC)
+        // 1. πÈπˆ∆€ ª˝º∫ (∏ﬁ∏∏Æ DC)
         HDC hMemDC = CreateCompatibleDC(hdc);
         HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
 
-        // Î∞∞Í≤ΩÏùÑ Ìù∞ÏÉâÏúºÎ°ú ÏßÄÏõÄ
+        // πË∞Ê¿ª »Úªˆ¿∏∑Œ ¡ˆøÚ
         PatBlt(hMemDC, 0, 0, width, height, WHITENESS);
 
         if (!graph) break;
@@ -406,7 +572,7 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
         BitBlt(hdc, 0, 0, width, height, hMemDC, 0, 0, SRCCOPY);
 
-        // 5. Î¶¨ÏÜåÏä§ Ï†ïÎ¶¨
+        // 5. ∏Æº“Ω∫ ¡§∏Æ
         SelectObject(hMemDC, hOldBitmap);
         DeleteObject(hBitmap);
         DeleteDC(hMemDC);
@@ -415,20 +581,20 @@ LRESULT PanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
     }
     case WM_MOUSEWHEEL: {
-        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // Ìú† Î∞©Ìñ• (120 ÎòêÎäî -120)
+        int delta = GET_WHEEL_DELTA_WPARAM(wParam);  // »Ÿ πÊ«‚ (120 ∂«¥¬ -120)
         POINT cursor;
         GetCursorPos(&cursor);
-        ScreenToClient(m_hwnd, &cursor);  // ÏúàÎèÑÏö∞ Í∏∞Ï§Ä Ï¢åÌëúÎ°ú Î≥ÄÌôò
+        ScreenToClient(m_hwnd, &cursor);  // ¿©µµøÏ ±‚¡ÿ ¡¬«•∑Œ ∫Ø»Ø
 
         double oldScale = scale;
         scale += (delta > 0) ? 0.1 : -0.1;
         if (scale < 0.1) scale = 0.1;
 
-        // ÎßàÏö∞Ïä§ Ï¢åÌëú Ï§ëÏã¨ÏúºÎ°ú ÌôïÎåÄ/Ï∂ïÏÜå Î≥ÄÌôò
+        // ∏∂øÏΩ∫ ¡¬«• ¡ﬂΩ…¿∏∑Œ »Æ¥Î/√‡º“ ∫Ø»Ø
         offsetX = cursor.x - (cursor.x - offsetX) * (scale / oldScale);
         offsetY = cursor.y - (cursor.y - offsetY) * (scale / oldScale);
 
-        // Ïª§Ïä§ÌÖÄ Ïù¥Î≤§Ìä∏Î°ú Ïõê Îã§Ïãú Í∑∏Î¶¨Í∏∞ ÏöîÏ≤≠
+        // ƒøΩ∫≈“ ¿Ã∫•∆Æ∑Œ ø¯ ¥ŸΩ√ ±◊∏Æ±‚ ø‰√ª
         RECT wnd_sz = { 0,0,width, height };
         InvalidateRect(m_hwnd, &wnd_sz, true);
         break;
@@ -545,7 +711,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         int newMsgHeight = AddMessageAndMeasure(hdc, messages.back(), box_max_width, r, totalContentHeight);
         ReleaseDC(m_hwnd, hdc);
 
-        // Í∏∞Ï°¥ ÎÇ¥Ïö© ÏúÑÎ°ú Ïä§ÌÅ¨Î°§
+        // ±‚¡∏ ≥ªøÎ ¿ß∑Œ Ω∫≈©∑—
         ScrollWindowEx(m_hwnd, 0, -newMsgHeight, NULL, NULL, NULL, NULL, SW_INVALIDATE);
         totalContentHeight += newMsgHeight + 10;
 
@@ -553,7 +719,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         SetScrollPos(m_hwnd, SB_VERT, scrollOffset, TRUE);
         InvalidateRect(m_hwnd, NULL, TRUE);
 
-        // Ïä§ÌÅ¨Î°§ Ï†ïÎ≥¥ Í∞±Ïã†
+        // Ω∫≈©∑— ¡§∫∏ ∞ªΩ≈
         SCROLLINFO si = { sizeof(SCROLLINFO), SIF_RANGE | SIF_PAGE | SIF_POS };
         si.nMin = 0;
         si.nMax = totalContentHeight;
@@ -561,7 +727,7 @@ LRESULT ChatPanelWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) 
         si.nPos = scrollOffset;
         SetScrollInfo(m_hwnd, SB_VERT, &si, TRUE);
 
-        // ÌïòÎã® ÏÉà Î©îÏãúÏßÄ ÏòÅÏó≠Îßå Îã§Ïãú Í∑∏Î¶º
+        // «œ¥‹ ªı ∏ﬁΩ√¡ˆ øµø™∏∏ ¥ŸΩ√ ±◊∏≤
         RECT invalidRect = { 0, height - newMsgHeight, width, height };
         InvalidateRect(m_hwnd, &invalidRect, TRUE);
         break;
