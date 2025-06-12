@@ -5,7 +5,7 @@
 #include <iostream> 
 #include <chrono> // std::chrono::milliseconds
 
-#define PIPE_NAME L"Integrity_Checker_MEP_PIPE"
+#define PIPE_NAME L"\\\\.\\pipe\\Integrity_Checker_MEP_PIPE"
 #define WINDOW_CLASS_NAME L"GraphViewer"
 #define WINDOW_TITLE L"C++ Win32 IPC Window"
 
