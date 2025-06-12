@@ -93,10 +93,15 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | BS_GROUPBOX,
             10, height * 0.8, width  - 20, height * 0.2 - 10, m_hwnd, nullptr, GetModuleHandle(NULL), nullptr);
 
+        int drop_w = width / 5;
+        int drop_h = height / 17;
+        int lead_padding = width / 50;
+        int top_padding = height / 28;
         for (int i = 0; i < dropdowns.size();i++) {
             dropdowns[i] = CreateWindowEx(WS_EX_CLIENTEDGE, WC_COMBOBOX, L"",
                 WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST | WS_VSCROLL,
-                20 + (200 * (i % 4)) + (20 * (i % 4)), height * 0.8 + 50 * (i / 4) + 30,
+                lead_padding + (drop_w + lead_padding) * (i % 4), 
+                height * 0.8 + drop_h * (i / 4) + top_padding,
                 200, 200,
                 m_hwnd, (HMENU)(5000 + i), GetModuleHandle(NULL), nullptr);
         }
@@ -116,27 +121,35 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         int width = LOWORD(lParam);
         int height = HIWORD(lParam);
 
-        HDWP hdwp = BeginDeferWindowPos(6);
+        HDWP hdwp = BeginDeferWindowPos(7+dropdowns.size());
 		hdwp = DeferWindowPos(hdwp, hEdit, NULL, 10, height * 0.65, width * 0.8, height * 0.15 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
 		hdwp = DeferWindowPos(hdwp, hButton, NULL, width * 0.8 + 10, height * 0.65, width * 0.2 - 20, height * 0.15 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
 		hdwp = DeferWindowPos(hdwp, hListView, NULL, width * 0.7, 0, width * 0.3 - 10, height * 0.5, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
 		hdwp = DeferWindowPos(hdwp, panel.m_hwnd, NULL, 10, 0, width * 0.7 - 10, height * 0.5, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
 		hdwp = DeferWindowPos(hdwp, chatPanel.m_hwnd, NULL, 10, height * 0.5 + 10, width - 20, height * 0.15 - 20, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
         hdwp = DeferWindowPos(hdwp, hGroup, NULL, 10, height * 0.8, width - 20, height * 0.2 - 10, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+        hdwp = DeferWindowPos(hdwp, hButtonMakeSentence, NULL, width * 0.9 + 10, height * 0.8 + 30, width * 0.1 - 20, height * 0.1, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+
+        int dropdown_width = width / 5;
+        int drowdown_height = height / 17;
+        int lead_padding = width / 50;
+        int top_padding = height / 28;
+        for (int i = 0; i < dropdowns.size();i++) {
+            hdwp = DeferWindowPos(hdwp, dropdowns[i], NULL, 
+                lead_padding + (lead_padding + dropdown_width) * (i % 4), 
+                height * 0.8 + drowdown_height * (i / 4) + top_padding,
+                dropdown_width, drowdown_height, SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS);
+        }
 		EndDeferWindowPos(hdwp);
+
+        panel.width = width * 0.7 - 10;
+        panel.height = height * 0.5;
+        chatPanel.width = width - 20;
+        chatPanel.height = height * 0.15 - 20;
 
         RedrawWindow(m_hwnd, NULL, NULL,
             RDW_INVALIDATE | RDW_ERASE |
             RDW_UPDATENOW | RDW_ALLCHILDREN);
-
-        panel.width = width * 0.7 - 10;
-		panel.height = height * 0.5;
-		InvalidateRect(panel.m_hwnd, NULL, TRUE);
-		chatPanel.width = width - 20;
-		chatPanel.height = height * 0.15 - 20;
-		InvalidateRect(chatPanel.m_hwnd, NULL, TRUE);
-        InvalidateRect(m_hwnd, NULL, TRUE);
-        UpdateWindow(m_hwnd);
         break;
     }        
     case WM_ERASEBKGND:
@@ -148,12 +161,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
         return 1;
     }
     case WM_PAINT: {
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(m_hwnd, &ps);
-		RECT rc;
-		GetClientRect(m_hwnd, &rc);
-		FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
-		EndPaint(m_hwnd, &ps);
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(m_hwnd, &ps);
+        RECT rc;
+        GetClientRect(m_hwnd, &rc);
+        FillRect(hdc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+        EndPaint(m_hwnd, &ps);
 		break;
     }
     case WM_COMMAND:
