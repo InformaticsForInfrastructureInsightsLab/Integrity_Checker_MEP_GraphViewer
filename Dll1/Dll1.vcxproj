@@ -24,6 +24,7 @@
     <ProjectGuid>{07277ed9-3eb3-4b41-a7d0-c9f25f7d1874}</ProjectGuid>
     <RootNamespace>Dll1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>GraphViewer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -40,13 +41,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -182,18 +183,11 @@ xcopy /Y /Q "$(TargetDir)*.lib" "%PLUGIN_DIR%"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Chat.h" />
-    <ClInclude Include="Graph.hpp" />
-    <ClInclude Include="utils.hpp" />
-    <ClInclude Include="WindowClass.hpp" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="json.hpp" />
+    <ClCompile Include="GraphViewer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Graph.cpp" />
-    <ClCompile Include="utils.cpp" />
-    <ClCompile Include="WindowClass.cpp" />
-    <ClCompile Include="dllmain.cpp" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="pch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
